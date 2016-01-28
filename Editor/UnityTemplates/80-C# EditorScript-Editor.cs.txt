@@ -1,0 +1,23 @@
+﻿//----------------------------------------------------------------------------------------------
+// Created by Leonid [Zanleo] Voitko (#CREATIONDATE#)
+//----------------------------------------------------------------------------------------------
+
+using System;
+using UnityEditor;
+using UnityEngine;
+
+[CustomEditor(typeof(#SCRIPTEDITOR#))]
+public class #SCRIPTNAME# : Editor
+{
+	private void OnEnable()
+	{
+		Target = (#SCRIPTEDITOR#)target;
+	}
+
+	private void OnDisable()
+	{
+		Target = null;
+	}
+
+	private #SCRIPTEDITOR# Target { get; set; }
+}

@@ -1,35 +1,57 @@
-﻿//Created by Leonid [Zanleo] Voitko (2014)
+﻿// Created by Leonid [Zanleo] Voitko (2014)
+
+#if UNITY_EDITOR
+#define ENABLE_ASSERTS_IN_EDITOR
+#endif
+
+using System;
 using System.Diagnostics;
 
-// TODO 
 public class Assert
 {
-	[Conditional("UNITY_EDITOR")]
-	public static void Test(bool logic, string debugString) {
-		if (logic) return;
-
-		UnityEngine.Debug.LogWarning(debugString);
-	}
-
-	[Conditional("UNITY_EDITOR")]
-	public static void Test(bool logic) {
-		if (logic) return;
-
-		UnityEngine.Debug.LogWarning("Assert!");
-	}
-
-	[Conditional("UNITY_EDITOR")]
-	public static void Test(bool logic, string debugString, UnityEngine.Object targetObject) {
-		if (logic) return;
+#if !ENABLE_ASSERTS_IN_EDITOR
+	[Conditional("UNITY_ASSERTIONS"), DebuggerStepThrough]
+#endif
+	public static void Test(bool logic, string debugString = "Assert!", UnityEngine.Object targetObject = null)
+	{
+		if (logic)
+		{
+			return;
+		}
 
 		UnityEngine.Debug.LogWarning(debugString, targetObject);
 	}
 
-	public static void Throw(string debugString) {
+#if !ENABLE_ASSERTS_IN_EDITOR
+	[Conditional("UNITY_ASSERTIONS"), DebuggerStepThrough]
+#endif
+	public static void Test(bool logic, Func<string> debugStringGetter, UnityEngine.Object targetObject = null)
+	{
+		if (logic)
+		{
+			return;
+		}
+
+		UnityEngine.Debug.LogWarning(debugStringGetter(), targetObject);
+	}
+
+#if !ENABLE_ASSERTS_IN_EDITOR
+	[Conditional("UNITY_ASSERTIONS"), DebuggerStepThrough]
+#endif
+	public static void Test(bool logic, UnityEngine.Object targetObject)
+	{
+		Assert.Test(logic, "Assert!", targetObject);
+	}
+
+	[DebuggerStepThrough]
+	public static void Throw(string debugString)
+	{
 		UnityEngine.Debug.LogWarning(debugString);
 	}
 
-	public static void Throw(string debugString, UnityEngine.Object targetObject) {
+	[DebuggerStepThrough]
+	public static void Throw(string debugString, UnityEngine.Object targetObject)
+	{
 		UnityEngine.Debug.LogWarning(debugString, targetObject);
 	}
 }

@@ -1,4 +1,5 @@
 ﻿//Created by Leonid [Zanleo] Voitko (2014)
+
 using UnityEngine;
 
 public abstract class SingletonGameObject<T> : MonoBehaviour where T : SingletonGameObject<T>
@@ -14,6 +15,12 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 		{
 			if (s_instance == null)
 			{
+#if UNITY_EDITOR
+				if (!Application.isPlaying)
+				{
+					return null;
+				}
+#endif
 				InitInstance();
 			}
 			return s_instance;
@@ -34,9 +41,9 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 	private void Awake()
 	{
 		GameObject.DontDestroyOnLoad(this.gameObject);
+		Assert.Test(s_instance == null, () => "Found not null instance for " + s_instance, this);
 		if (s_instance == null)
 		{
-			// TODO! need destroy if on Awake instance not null!?
 			s_instance = this as T;
 			s_instance.Init();
 		}
@@ -48,8 +55,8 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 		{
 			return;
 		}
-		UnityEngine.Object resource = Resources.Load(PathToPrefabs + typeof(T).ToString());
-		Assert.Test(resource != null, "Resource not found for '" + PathToPrefabs + typeof(T).ToString() + "'");
+		UnityEngine.Object resource = Resources.Load(GetPathToPrefab());
+		Assert.Test(resource != null, "Resource not found for '" + GetPathToPrefab() + "'");
 
 		GameObject instanceObject = GameObject.Instantiate(resource) as GameObject;
 		instanceObject.name = typeof(T).ToString();
@@ -61,10 +68,46 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 		// Init called from Awake!
 	}
 
-	//TODO: add comment
+	public static void FreeInstance()
+	{
+		if (s_instance == null)
+		{
+			return;
+		}
+		GameObject.DestroyImmediate(s_instance);
+	}
+
+	private void OnDestroy()
+	{
+		DeInit();
+		if (s_instance == this)
+		{
+			s_instance = null;
+		}
+	}
+
 	protected virtual void Init()
 	{
 		//Debug.Log("Init " + typeof(T).ToString());
+	}
+
+	protected virtual void DeInit()
+	{
+		//Debug.Log("DeInit " + typeof(T).ToString());
+	}
+
+	public static T GetComponentOnly()
+	{
+		var resource = Resources.Load<GameObject>(GetPathToPrefab());
+		Assert.Test(resource != null, "Resource not found for '" + GetPathToPrefab() + "'");
+		return resource.GetComponent<T>();
+	}
+
+	private static string GetPathToPrefab()
+	{
+		string pathToRes = typeof (T).ToString().Replace('.', '/');
+		pathToRes = PathToPrefabs + pathToRes;
+		return pathToRes;
 	}
 
 	//Используется Reflection для создания экземпляра класса без публичного конструктора

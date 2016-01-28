@@ -1,0 +1,19 @@
+﻿//----------------------------------------------------------------------------------------------
+// Created by Leonid [Zanleo] Voitko (#CREATIONDATE#)
+//----------------------------------------------------------------------------------------------
+
+using UnityEngine;
+using System.Collections;
+
+public class #SCRIPTNAME# : MonoBehaviour
+{
+	private void Start()
+	{
+
+	}
+
+	private void Update()
+	{
+
+	}
+}

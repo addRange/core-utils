@@ -4,6 +4,7 @@
 //----------------------------------------------------------------------------------------------
 
 using System;
+using UnityEngine.Events;
 
 public static class ActionExtensions
 {
@@ -24,6 +25,31 @@ public static class ActionExtensions
 	}
 
 	public static void SafeInvoke<T1, T2>(this Action<T1, T2> _this, T1 param1, T2 param2)
+	{
+		if (_this != null)
+		{
+			_this.Invoke(param1, param2);
+		}
+	}
+
+
+	public static void SafeInvoke(this UnityAction _this)
+	{
+		if (_this != null)
+		{
+			_this.Invoke();
+		}
+	}
+
+	public static void SafeInvoke<T1>(this UnityAction<T1> _this, T1 param1)
+	{
+		if (_this != null)
+		{
+			_this.Invoke(param1);
+		}
+	}
+
+	public static void SafeInvoke<T1, T2>(this UnityAction<T1, T2> _this, T1 param1, T2 param2)
 	{
 		if (_this != null)
 		{

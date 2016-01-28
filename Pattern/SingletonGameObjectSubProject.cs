@@ -1,5 +1,6 @@
 ﻿//Created by Leonid [Zanleo] Voitko (2016)
 
+// in fact this is only example for SubRepo projects
 public abstract class SingletonGameObjectSubProject<T> : SingletonGameObject<T> where T : SingletonGameObject<T>
 {
 	static SingletonGameObjectSubProject()
