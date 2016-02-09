@@ -1,5 +1,6 @@
 ﻿//Created by Leonid [Zanleo] Voitko (2014)
 
+using System;
 using UnityEngine;
 
 public abstract class SingletonGameObject<T> : MonoBehaviour where T : SingletonGameObject<T>
@@ -24,15 +25,6 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 				InitInstance();
 			}
 			return s_instance;
-		}
-
-		set
-		{
-			if (s_instance != null)
-			{
-				GameObject.Destroy(s_instance.gameObject);
-			}
-			s_instance = value;
 		}
 	}
 
@@ -74,15 +66,25 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 		{
 			return;
 		}
-		GameObject.DestroyImmediate(s_instance);
+		GameObject.DestroyImmediate(s_instance.gameObject);
 	}
 
 	private void OnDestroy()
 	{
-		DeInit();
-		if (s_instance == this)
+		try
 		{
-			s_instance = null;
+			DeInit();
+		}
+		catch (Exception)
+		{
+			throw;
+		}
+		finally
+		{
+			if (s_instance == this)
+			{
+				s_instance = null;
+			}
 		}
 	}
 
@@ -105,7 +107,7 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 
 	private static string GetPathToPrefab()
 	{
-		string pathToRes = typeof (T).ToString().Replace('.', '/');
+		string pathToRes = typeof(T).ToString().Replace('.', '/');
 		pathToRes = PathToPrefabs + pathToRes;
 		return pathToRes;
 	}
