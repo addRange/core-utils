@@ -1,75 +1,132 @@
 //----------------------------------------------------------------------------------------------
 // Created by Pavel [Ryfi] Sakson (26/02/2016)
 //-----------------------------------------------------------------------------------------
+
 using UnityEngine;
 using UnityEditor;
-using System.Collections;
 using UnityEngine.UI;
 using System.Collections.Generic;
-
+using System.Linq;
 
 class RaycastGraphicOptimizer : EditorWindow
 {
-    [MenuItem("Window/Raycast Graphic Optimizer")]
+	[MenuItem("Window/Raycast Graphic Optimizer")]
 
-    public static void ShowWindow()
-    {
-        EditorWindow.GetWindow(typeof(RaycastGraphicOptimizer), false, "Raycast Graphic Optimizer",true);
-    }
+	public static void ShowWindow()
+	{
+		EditorWindow.GetWindow(typeof(RaycastGraphicOptimizer), false, "Raycast Graphic Optimizer", true);
+	}
 
-    void OnGUI()
-    {
-        GameObject[] allgo = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
-        List<Image> allObjects = new List<Image>();
-        allObjects.Clear();
+	private void OnEnable()
+	{
+		UpdateObjectsForOptimize();
+		EditorApplication.hierarchyWindowChanged += OnHierarchyWindowChanged;
+	}
 
-        foreach (GameObject go in allgo)
-        {
-            var images = go.GetComponentsInChildren<Image>(true);
-            allObjects.AddRange(images);
-        }
+	private void OnDisable()
+	{
+		EditorApplication.hierarchyWindowChanged -= OnHierarchyWindowChanged;
+	}
 
-        EditorGUILayout.Separator();
+	private void OnHierarchyWindowChanged()
+	{
+		if (m_inChangingProcess)
+		{
+			return;
+		}
+		UpdateObjectsForOptimize();
+	}
 
-        m_scrollPos = EditorGUILayout.BeginScrollView(m_scrollPos, false, true); //, GUILayout.Width(600), GUILayout.Height(800)
+	private void UpdateObjectsForOptimize()
+	{
+		m_targetObjects.Clear();
+		GameObject[] allgo = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
+		foreach (GameObject go in allgo)
+		{
+			var graphics = go.GetComponentsInChildren<Graphic>(true);
+			foreach (var graphic in graphics)
+			{
+				m_targetObjects.Add(GetGameObjectPath(graphic.gameObject), graphic);
+			}
+		}
+		m_sortedObjectsNames = m_targetObjects.Keys.ToList();
+		m_sortedObjectsNames.Sort();
+	}
 
-        foreach (Image image in allObjects)
-        {
-            if (image.raycastTarget == true && image.GetComponent<Button>() == null && image.GetComponent<Scrollbar>() == null && image.GetComponent<Dropdown>() == null)
-            {
-                Rect r = EditorGUILayout.BeginHorizontal("Button");
-                if (GUI.Button(r, GUIContent.none))
-                {
-                    UnityEditor.Selection.activeObject = image;
-                    image.raycastTarget = !image.raycastTarget;
+	private void OnGUI()
+	{
+		GameObject newSelected = null;
+		var oldAligment = GUI.skin.button.alignment;
+		GUI.skin.button.alignment = TextAnchor.MiddleLeft;
+		m_scrollPos = EditorGUILayout.BeginScrollView(m_scrollPos); //, GUILayout.Width(600), GUILayout.Height(800)
+		foreach (var objPath in m_sortedObjectsNames)
+		{
+			var graphic = m_targetObjects[objPath];
+			if (!graphic.raycastTarget)
+			{
+				continue;
+			}
+			EditorGUILayout.BeginHorizontal();
 
-                    var prefabRoot = PrefabUtility.FindPrefabRoot(image.gameObject);
-                    if (prefabRoot != null)
-                    {
-                        var prefabParent = PrefabUtility.GetPrefabParent(prefabRoot);
-                        PrefabUtility.ReplacePrefab(prefabRoot, prefabParent, ReplacePrefabOptions.ConnectToPrefab);
-                    }
-                }
+			bool newRaycastTargetVal = EditorGUILayout.Toggle(graphic.raycastTarget, m_maxToggleWidth);
+			if (newRaycastTargetVal != graphic.raycastTarget)
+			{
+				m_inChangingProcess = true;
+				SetGraphicRaycastTarget(graphic, newRaycastTargetVal);
+				m_inChangingProcess = false;
+			}
+			if (GUILayout.Button(objPath))
+			{
+				newSelected = graphic.gameObject;
+			}
+			EditorGUILayout.EndHorizontal();
+		}
+		EditorGUILayout.EndScrollView();
+		GUI.skin.button.alignment = oldAligment;
+		if (newSelected != null)
+		{
+			Selection.activeObject = newSelected;
+		}
+	}
 
-                EditorGUILayout.LabelField(GetGameObjectPath(image.gameObject));
-                image.raycastTarget = EditorGUILayout.Toggle(image.raycastTarget);
+	private void SetGraphicRaycastTarget(Graphic graphic, bool raycastTarget)
+	{
+		graphic.raycastTarget = raycastTarget;
+		var prefabRoot = PrefabUtility.FindPrefabRoot(graphic.gameObject);
+		if (prefabRoot == null)
+		{
+			return;
+		}
+		var prefabParent = PrefabUtility.GetPrefabParent(prefabRoot);
+		if (prefabParent == null)
+		{
+			return;
+		}
+		if (!EditorUtility.DisplayDialog("Apply prefab changes?", "Prefab found for " + graphic.gameObject, "Yes", "No"))
+		{
+			Debug.Log("Prefab found for " + graphic.gameObject, graphic.gameObject);
+			return;
+		}
+		PrefabUtility.ReplacePrefab(prefabRoot, prefabParent, ReplacePrefabOptions.ConnectToPrefab);
+		Debug.Log("Prefab applyed " + prefabParent, prefabParent);
+	}
 
-                EditorGUILayout.EndHorizontal();
-            }
-        }
-        EditorGUILayout.EndScrollView();
-    }
+	private string GetGameObjectPath(GameObject obj)
+	{
+		string path = obj.name;
+		while (obj.transform.parent != null)
+		{
+			obj = obj.transform.parent.gameObject;
+			path = obj.name + "/" + path;
+		}
+		return path;
+	}
 
-    private string GetGameObjectPath(GameObject obj)
-    {
-        string path = "/" + obj.name;
-        while (obj.transform.parent != null)
-        {
-            obj = obj.transform.parent.gameObject;
-            path = "/" + obj.name + path;
-        }
-        return path;
-    }
+	// Optimization
+	private bool m_inChangingProcess = false;
 
-    private Vector2 m_scrollPos = new Vector2(0, 0);
+	private Vector2 m_scrollPos = Vector2.zero;
+	private Dictionary<string, Graphic> m_targetObjects = new Dictionary<string, Graphic>();
+	private List<string> m_sortedObjectsNames = new List<string>();
+	private GUILayoutOption m_maxToggleWidth = GUILayout.MaxWidth(20);
 }
