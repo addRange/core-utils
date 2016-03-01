@@ -55,6 +55,7 @@ class RaycastGraphicOptimizer : EditorWindow
 
 	private void OnGUI()
 	{
+		m_askPrefabChanges = EditorGUILayout.Toggle("AskPrefabChanges", m_askPrefabChanges);
 		GameObject newSelected = null;
 		var oldAligment = GUI.skin.button.alignment;
 		GUI.skin.button.alignment = TextAnchor.MiddleLeft;
@@ -102,10 +103,13 @@ class RaycastGraphicOptimizer : EditorWindow
 		{
 			return;
 		}
-		if (!EditorUtility.DisplayDialog("Apply prefab changes?", "Prefab found for " + graphic.gameObject, "Yes", "No"))
+		if (m_askPrefabChanges)
 		{
-			Debug.Log("Prefab found for " + graphic.gameObject, graphic.gameObject);
-			return;
+			if (!EditorUtility.DisplayDialog("Apply prefab changes?", "Prefab found for " + graphic.gameObject, "Yes", "No"))
+			{
+				Debug.Log("Prefab found for " + graphic.gameObject, graphic.gameObject);
+				return;
+			}
 		}
 		PrefabUtility.ReplacePrefab(prefabRoot, prefabParent, ReplacePrefabOptions.ConnectToPrefab);
 		Debug.Log("Prefab applyed " + prefabParent, prefabParent);
@@ -129,4 +133,6 @@ class RaycastGraphicOptimizer : EditorWindow
 	private Dictionary<string, Graphic> m_targetObjects = new Dictionary<string, Graphic>();
 	private List<string> m_sortedObjectsNames = new List<string>();
 	private GUILayoutOption m_maxToggleWidth = GUILayout.MaxWidth(20);
+
+	private bool m_askPrefabChanges = true;
 }
