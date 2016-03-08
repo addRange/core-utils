@@ -66,14 +66,22 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 		{
 			return;
 		}
+		s_instance.DeInit();
+		m_deiniting = true;
 		GameObject.DestroyImmediate(s_instance.gameObject);
+		m_deiniting = false;
 	}
+
+	private void OnApplicationQuit() { FreeInstance(); }
 
 	private void OnDestroy()
 	{
 		try
 		{
-			DeInit();
+			if (!m_deiniting)
+			{
+				DeInit();
+			}
 		}
 		catch (Exception)
 		{
@@ -95,6 +103,7 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 
 	protected virtual void DeInit()
 	{
+		m_deiniting = false;
 		//Debug.Log("DeInit " + typeof(T).ToString());
 	}
 
@@ -116,4 +125,5 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 	private static T s_instance = null;
 
 	protected static string PathToPrefabs = "Prefabs/Scripts/";
+	private static bool m_deiniting = false;
 }

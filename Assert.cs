@@ -10,9 +10,8 @@ using System.Diagnostics;
 public class Assert
 {
 #if !ENABLE_ASSERTS_IN_EDITOR
-	[Conditional("UNITY_ASSERTIONS")]
+	[Conditional("UNITY_ASSERTIONS"), DebuggerStepThrough]
 #endif
-	[DebuggerStepThrough]
 	public static void Test(bool logic, string debugString = "Assert!", UnityEngine.Object targetObject = null)
 	{
 		if (logic)
@@ -24,9 +23,8 @@ public class Assert
 	}
 
 #if !ENABLE_ASSERTS_IN_EDITOR
-	[Conditional("UNITY_ASSERTIONS")]
+	[Conditional("UNITY_ASSERTIONS"), DebuggerStepThrough]
 #endif
-	[DebuggerStepThrough]
 	public static void Test(bool logic, Func<string> debugStringGetter, UnityEngine.Object targetObject = null)
 	{
 		if (logic)
@@ -38,9 +36,8 @@ public class Assert
 	}
 
 #if !ENABLE_ASSERTS_IN_EDITOR
-	[Conditional("UNITY_ASSERTIONS")]
+	[Conditional("UNITY_ASSERTIONS"), DebuggerStepThrough]
 #endif
-	[DebuggerStepThrough]
 	public static void Test(bool logic, UnityEngine.Object targetObject)
 	{
 		Assert.Test(logic, "Assert!", targetObject);
