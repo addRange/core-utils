@@ -4,7 +4,6 @@
 
 using UnityEngine;
 using UnityEditor;
-using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,19 +18,19 @@ class TextureOptimizer : EditorWindow
 	private void OnEnable()
 	{
 		UpdateObjectsForOptimize();
-		EditorApplication.hierarchyWindowChanged += OnHierarchyWindowChanged;
+		EditorApplication.projectWindowChanged += OnProjectWindowChanged;
 	}
 
 	private void OnDisable()
 	{
-		EditorApplication.hierarchyWindowChanged -= OnHierarchyWindowChanged;
+		EditorApplication.projectWindowChanged -= OnProjectWindowChanged;
 	}
 
-	private void OnHierarchyWindowChanged()
+	private void OnProjectWindowChanged()
 	{
-		//if (m_inChangingProcess)
+		if (m_inChangingProcess)
 		{
-			//return;
+			return;
 		}
 		UpdateObjectsForOptimize();
 	}
@@ -41,9 +40,9 @@ class TextureOptimizer : EditorWindow
 		//AssetDatabase.FindAssets()
 		//AssetDatabase.LoadAssetAtPath<>()
 		m_allTextures.Clear();
-
+		m_allTexturePathImporter.Clear();
 		var allTexturesGuids = AssetDatabase.FindAssets("t:Texture").ToList();//Resources.LoadAll<Texture>("").ToList();//Resources.FindObjectsOfTypeAll<Texture>().ToList();
-		var paths = allTexturesGuids.Select<string,string>(s => AssetDatabase.GUIDToAssetPath(s)).ToList();
+		var paths = allTexturesGuids.Select<string, string>(s => AssetDatabase.GUIDToAssetPath(s)).ToList();
 		foreach (var path in paths)
 		{
 			//var allTexture = AssetDatabase.LoadAssetAtPath<Texture>(path);
@@ -51,16 +50,32 @@ class TextureOptimizer : EditorWindow
 			m_allTexturePathImporter.Add(path, AssetImporter.GetAtPath(path) as TextureImporter);
 		}
 	}
-	
+
 	private void OnGUI()
 	{
 		if (GUILayout.Button("Not generate MipMaps for all"))
 		{
+			EditorUtility.DisplayProgressBar("Disable MipMaps", "disable mipmaps", 0);
+			int curIndex = 0;
+			m_inChangingProcess = true;
 			foreach (var texturePair in m_allTexturePathImporter)
 			{
+				float progress = (float)curIndex / (float)m_allTexturePathImporter.Count;
+				if (EditorUtility.DisplayCancelableProgressBar("Disable MipMaps", texturePair.Key, progress))
+				{
+					Debug.LogError("Canceled by user");
+					break;
+				}
+				if (!texturePair.Value.mipmapEnabled)
+				{
+					continue;
+				}
 				DisableMipMaps(texturePair.Value);
+				curIndex++;
 			}
+			EditorUtility.ClearProgressBar();
 			AssetDatabase.Refresh();
+			m_inChangingProcess = false;
 			return;
 		}
 		m_scrollPos = EditorGUILayout.BeginScrollView(m_scrollPos);
@@ -73,22 +88,17 @@ class TextureOptimizer : EditorWindow
 			EditorGUILayout.BeginHorizontal();
 			if (!GUILayout.Toggle(true, "", m_maxToggleWidth))
 			{
+				m_inChangingProcess = true;
 				DisableMipMaps(texturePair.Value);
+				m_inChangingProcess = false;
 			}
 			if (GUILayout.Button(texturePair.Key))
 			{
-				// TODO?
-				//Selection.activeObject = textureImporter.Key;
+				var res = AssetDatabase.LoadAssetAtPath<Object>(texturePair.Value.assetPath);
+				Selection.activeObject = res;
 			}
 			EditorGUILayout.EndHorizontal();
 		}
-// 		foreach (var allTexture in m_allTextures)
-// 		{
-// 			if (GUILayout.Button(allTexture.name))
-// 			{
-// 				Selection.activeObject = allTexture;
-// 			}
-// 		}
 		EditorGUILayout.EndScrollView();
 	}
 
@@ -104,5 +114,6 @@ class TextureOptimizer : EditorWindow
 	private List<Texture> m_allTextures = new List<Texture>();
 	private Dictionary<string, TextureImporter> m_allTexturePathImporter = new Dictionary<string, TextureImporter>();
 	private GUILayoutOption m_maxToggleWidth = GUILayout.MaxWidth(20);
-	TextureImporterSettings m_settings = new TextureImporterSettings();
+	private TextureImporterSettings m_settings = new TextureImporterSettings();
+	private bool m_inChangingProcess = false;
 }
