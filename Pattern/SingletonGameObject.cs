@@ -1,14 +1,27 @@
 ﻿//Created by Leonid [Zanleo] Voitko (2014)
 
+//#define Debug_SingletonGameObject
+
 using System;
+using System.Diagnostics;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
+using Assert = Core.Utils.Assert;
 
 public abstract class SingletonGameObject<T> : MonoBehaviour where T : SingletonGameObject<T>
 {
+	[Conditional("Debug_SingletonGameObject"), DebuggerStepThrough]
+	private static void Log(string msg)
+	{
+		Debug.Log(msg);
+	}
+
 	/// Защищённый конструктор необходим для того, чтобы предотвратить создание 
 	/// экземпляра класса Singleton. 
 	/// Он будет вызван из закрытого конструктора наследственного класса.
-	protected SingletonGameObject() { }
+	protected SingletonGameObject()
+	{
+	}
 
 	public static T Instance
 	{
@@ -24,55 +37,68 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 #endif
 				InitInstance();
 			}
+
 			return s_instance;
 		}
 	}
 
-	public static T TryInstance { get { return s_instance; } }
+	public static T TryInstance
+	{
+		get { return s_instance; }
+	}
 
 	private void Awake()
 	{
-		GameObject.DontDestroyOnLoad(this.gameObject);
-		Assert.Test(s_instance == null, () => "Found not null instance for " + s_instance, this);
+		Assert.IsNull(s_instance, "Found not null instance for " + s_instance);
 		if (s_instance == null)
 		{
-			s_instance = this as T;
-			s_instance.Init();
+			GameObject.DontDestroyOnLoad(gameObject);
+			Init();
+		}
+		else
+		{
+			GameObject.DestroyImmediate(gameObject);
 		}
 	}
 
 	public static void InitInstance()
 	{
+		Log("InitInstance " + typeof(T) + "; " + (s_instance == null));
 		if (s_instance != null)
 		{
 			return;
 		}
+
 		UnityEngine.Object resource = Resources.Load(GetPathToPrefab());
-		Assert.Test(resource != null, "Resource not found for '" + GetPathToPrefab() + "'");
+		Assert.IsNotNull(resource, "Resource not found for '" + GetPathToPrefab() + "'");
 
 		GameObject instanceObject = GameObject.Instantiate(resource) as GameObject;
 		instanceObject.name = typeof(T).ToString();
-		Assert.Test(instanceObject != null, "Failed create Object of the " + typeof(T).ToString());
+		Assert.IsNotNull(instanceObject, "Failed create Object of the " + typeof(T).ToString());
 
 		//s_instance = instanceObject.GetComponent<T>();
-		Assert.Test(s_instance != null, "Failed create Instance object of the " + typeof(T).ToString());
+		Assert.IsNotNull(s_instance, "Failed create Instance object of the " + typeof(T).ToString());
 
 		// Init called from Awake!
 	}
 
+	// С Unity 5.3 изменена последовательность вызовов, поэтому FreeInstance не вызывается в OnApplicationQuit
+	// https://docs.unity3d.com/520/Documentation/Manual/ExecutionOrder.html
+	// https://docs.unity3d.com/530/Documentation/Manual/ExecutionOrder.html
 	public static void FreeInstance()
 	{
+		Log("FreeInstance " + typeof(T) + "; " + (s_instance != null));
 		if (s_instance == null)
 		{
 			return;
 		}
+
+		var instObj = s_instance.gameObject;
 		s_instance.DeInit();
 		m_deiniting = true;
-		GameObject.DestroyImmediate(s_instance.gameObject);
+		GameObject.DestroyImmediate(instObj);
 		m_deiniting = false;
 	}
-
-	private void OnApplicationQuit() { FreeInstance(); }
 
 	private void OnDestroy()
 	{
@@ -89,32 +115,44 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 		}
 		finally
 		{
-			if (s_instance == this)
-			{
-				s_instance = null;
-			}
 		}
 	}
 
 	protected virtual void Init()
 	{
-		//Debug.Log("Init " + typeof(T).ToString());
+		s_instance = this as T;
+		Log(GetHashCode() + ". Init " + typeof(T).ToString());
 	}
 
 	protected virtual void DeInit()
 	{
+		if (s_instance == this)
+		{
+			s_instance = null;
+		}
 		m_deiniting = false;
-		//Debug.Log("DeInit " + typeof(T).ToString());
+		Log(GetHashCode() + ". DeInit " + typeof(T).ToString());
 	}
 
 	public static T GetComponentOnly()
 	{
-		var resource = Resources.Load<GameObject>(GetPathToPrefab());
-		Assert.Test(resource != null, "Resource not found for '" + GetPathToPrefab() + "'");
-		return resource.GetComponent<T>();
+#if UNITY_EDITOR
+		if (!Application.isPlaying)
+		{
+			string path = "Assets/Resources/" + GetPathToPrefab() + ".prefab";
+			return UnityEditor.AssetDatabase.LoadAssetAtPath<T>(path);
+		}
+#endif
+		T resource = Resources.Load<T>(GetPathToPrefab());
+		if (resource == null)
+		{
+			return null;
+		}
+
+		return resource;
 	}
 
-	private static string GetPathToPrefab()
+	public static string GetPathToPrefab()
 	{
 		string pathToRes = typeof(T).ToString().Replace('.', '/');
 		pathToRes = PathToPrefabs + pathToRes;

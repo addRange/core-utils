@@ -1,11 +1,12 @@
-﻿// Copyright (c) 2014-2014. All rights reserved.
-//----------------------------------------------------------------------------------------------
+﻿//----------------------------------------------------------------------------------------------
 // author Leonid [Zanleo] Voitko
 //----------------------------------------------------------------------------------------------
 
+//#define ENABLE_LOGS
+
 using System;
 using System.Collections.Generic;
-using UAssert = UnityEngine.Assertions.Assert;
+using Assert = Core.Utils.Assert;
 
 public class DictionaryPool<ObjKey, ObjType> where ObjType : class
 {
@@ -35,19 +36,19 @@ public class DictionaryPool<ObjKey, ObjType> where ObjType : class
 				result = instantiateObjectFunc(key);
 			}
 		}
-		UAssert.IsNotNull(result, "Some bad for " + key + " found " + result);
+		Assert.IsTrue(instantiateObjectFunc == null || result != null, "Some bad for " + key + " found " + result);
 		return result;
 	}
 
-	public void PushToPool(ObjKey key, ObjType obj)
+	public void PutToPool(ObjKey key, ObjType obj)
 	{
 		if (!Pools.ContainsKey(key))
 		{
 			Pools[key] = new Pool<ObjType>();
 		}
 
-		Pools[key].Push(obj);
-		UAssert.IsNotNull(obj, "Some bad for " + key + " found " + obj);
+		Pools[key].PutToPool(obj);
+		Assert.IsNotNull(obj, "Some bad for " + key + " found " + obj);
 	}
 
 	public void ClearPool(Action<ObjKey, ObjType> clearAction)
@@ -63,5 +64,5 @@ public class DictionaryPool<ObjKey, ObjType> where ObjType : class
 		}
 	}
 
-	private Dictionary<ObjKey, Pool<ObjType>> Pools { get; set; }
+	public Dictionary<ObjKey, Pool<ObjType>> Pools { get; private set; }
 }

@@ -1,0 +1,8 @@
+{
+    "name": "Core.Utils",
+    "references": [
+        "CodeStage"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

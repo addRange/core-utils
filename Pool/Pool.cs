@@ -1,5 +1,4 @@
-﻿// Copyright (c) 2014-2014. All rights reserved.
-//----------------------------------------------------------------------------------------------
+﻿//----------------------------------------------------------------------------------------------
 // author Leonid [Zanleo] Voitko
 //----------------------------------------------------------------------------------------------
 
@@ -24,10 +23,10 @@ public class Pool<ObjType> where ObjType : class
 		return ret;
 	}
 
-	public void Push(ObjType obj)
+	public void PutToPool(ObjType obj)
 	{
 		ObjectPool.Insert(0, obj);
 	}
 
-	private List<ObjType> ObjectPool { get; set; }
+	public List<ObjType> ObjectPool { get; private set; }
 }

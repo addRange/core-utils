@@ -3,8 +3,10 @@
 //----------------------------------------------------------------------------------------------
 
 using System;
+using System.Diagnostics;
 using UnityEngine;
 
+[Conditional("UNITY_EDITOR")]
 public class ResourcesPathAttribute : PropertyAttribute
 {
 	public ResourcesPathAttribute()

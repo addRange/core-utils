@@ -25,12 +25,13 @@ class RaycastGraphicOptimizer : EditorWindow
 			Graphic = graphic;
 			State = state;
 		}
+
 		public Graphic Graphic { get; set; }
 		public RayCastGraphycAllower State { get; set; }
 		public Selectable Selectable { get; set; }
 	}
 
-	[MenuItem("Window/Raycast Graphic Optimizer")]
+	[MenuItem("Window/Utils/Raycast Graphic Optimizer")]
 	public static void ShowWindow()
 	{
 		EditorWindow.GetWindow(typeof(RaycastGraphicOptimizer), false, "Raycast Graphic Optimizer", true);
@@ -53,6 +54,7 @@ class RaycastGraphicOptimizer : EditorWindow
 		{
 			return;
 		}
+
 		UpdateObjectsForOptimize();
 	}
 
@@ -67,8 +69,17 @@ class RaycastGraphicOptimizer : EditorWindow
 			foreach (var graphic in graphics)
 			{
 				var container = new GraphicContainer(graphic, RayCastGraphycAllower.CantUnset);
-				m_targetObjects.Add(GetGameObjectPath(graphic.gameObject), container);
+				string objPath = GetGameObjectPath(graphic.gameObject);
+				if (m_targetObjects.ContainsKey(objPath))
+				{
+					Debug.Log(objPath + " double graphic found");
+				}
+				else
+				{
+					m_targetObjects.Add(objPath, container);
+				}
 			}
+
 			var selectables = go.GetComponentsInChildren<Selectable>(true);
 			foreach (var selectable in selectables)
 			{
@@ -99,13 +110,14 @@ class RaycastGraphicOptimizer : EditorWindow
 	{
 		var xContainer = m_targetObjects[x];
 		var yContainer = m_targetObjects[y];
-		int xState = (int)xContainer.State;
-		int yState = (int)yContainer.State;
+		int xState = (int) xContainer.State;
+		int yState = (int) yContainer.State;
 		int compare = xState.CompareTo(yState);
 		if (compare == 0)
 		{
 			return x.CompareTo(y);
 		}
+
 		return compare;
 	}
 
@@ -124,6 +136,7 @@ class RaycastGraphicOptimizer : EditorWindow
 			{
 				continue;
 			}
+
 			switch (container.State)
 			{
 				case RayCastGraphycAllower.CantUnset:
@@ -136,6 +149,7 @@ class RaycastGraphicOptimizer : EditorWindow
 					GUI.color = Color.grey;
 					break;
 			}
+
 			EditorGUILayout.BeginHorizontal();
 			bool newRaycastTargetVal = EditorGUILayout.Toggle(container.Graphic.raycastTarget, m_maxToggleWidth);
 			if (newRaycastTargetVal != container.Graphic.raycastTarget)
@@ -157,6 +171,7 @@ class RaycastGraphicOptimizer : EditorWindow
 			}
 			EditorGUILayout.EndHorizontal();
 		}
+
 		EditorGUILayout.EndScrollView();
 		GUI.skin.button.alignment = oldAligment;
 		GUI.color = oldColor;
@@ -174,11 +189,13 @@ class RaycastGraphicOptimizer : EditorWindow
 		{
 			return;
 		}
+
 		var prefabParent = PrefabUtility.GetPrefabParent(prefabRoot);
 		if (prefabParent == null)
 		{
 			return;
 		}
+
 		if (m_askPrefabChanges)
 		{
 			if (!EditorUtility.DisplayDialog("Apply prefab changes?", "Prefab found for " + graphic.gameObject, "Yes", "No"))
@@ -187,8 +204,9 @@ class RaycastGraphicOptimizer : EditorWindow
 				return;
 			}
 		}
+
 		PrefabUtility.ReplacePrefab(prefabRoot, prefabParent, ReplacePrefabOptions.ConnectToPrefab);
-		Debug.Log("Prefab applyed " + prefabParent, prefabParent);
+		Debug.Log("Prefab applied " + prefabParent, prefabParent);
 	}
 
 	private string GetGameObjectPath(GameObject obj)
@@ -199,6 +217,7 @@ class RaycastGraphicOptimizer : EditorWindow
 			obj = obj.transform.parent.gameObject;
 			path = obj.name + "/" + path;
 		}
+
 		return path;
 	}
 

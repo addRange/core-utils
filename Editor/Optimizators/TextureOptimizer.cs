@@ -9,7 +9,7 @@ using System.Linq;
 
 class TextureOptimizer : EditorWindow
 {
-	[MenuItem("Window/Textures Optimizer")]
+	[MenuItem("Window/Utils/Textures Optimizer")]
 	public static void ShowWindow()
 	{
 		EditorWindow.GetWindow(typeof(TextureOptimizer), false, "Textures Optimizer", true);
@@ -32,6 +32,7 @@ class TextureOptimizer : EditorWindow
 		{
 			return;
 		}
+
 		UpdateObjectsForOptimize();
 	}
 
@@ -41,7 +42,9 @@ class TextureOptimizer : EditorWindow
 		//AssetDatabase.LoadAssetAtPath<>()
 		m_allTextures.Clear();
 		m_allTexturePathImporter.Clear();
-		var allTexturesGuids = AssetDatabase.FindAssets("t:Texture").ToList();//Resources.LoadAll<Texture>("").ToList();//Resources.FindObjectsOfTypeAll<Texture>().ToList();
+		var allTexturesGuids =
+			AssetDatabase.FindAssets("t:Texture")
+							 .ToList(); //Resources.LoadAll<Texture>("").ToList();//Resources.FindObjectsOfTypeAll<Texture>().ToList();
 		var paths = allTexturesGuids.Select<string, string>(s => AssetDatabase.GUIDToAssetPath(s)).ToList();
 		foreach (var path in paths)
 		{
@@ -60,31 +63,40 @@ class TextureOptimizer : EditorWindow
 			m_inChangingProcess = true;
 			foreach (var texturePair in m_allTexturePathImporter)
 			{
-				float progress = (float)curIndex / (float)m_allTexturePathImporter.Count;
+				float progress = (float) curIndex / (float) m_allTexturePathImporter.Count;
 				if (EditorUtility.DisplayCancelableProgressBar("Disable MipMaps", texturePair.Key, progress))
 				{
 					Debug.LogError("Canceled by user");
 					break;
 				}
+
 				if (!texturePair.Value.mipmapEnabled)
 				{
 					continue;
 				}
+
 				DisableMipMaps(texturePair.Value);
 				curIndex++;
 			}
+
 			EditorUtility.ClearProgressBar();
 			AssetDatabase.Refresh();
 			m_inChangingProcess = false;
 			return;
 		}
+
 		m_scrollPos = EditorGUILayout.BeginScrollView(m_scrollPos);
 		foreach (var texturePair in m_allTexturePathImporter)
 		{
+			if (texturePair.Value == null)
+			{
+				continue;
+			}
 			if (!texturePair.Value.mipmapEnabled)
 			{
 				continue;
 			}
+
 			EditorGUILayout.BeginHorizontal();
 			if (!GUILayout.Toggle(true, "", m_maxToggleWidth))
 			{
@@ -99,12 +111,13 @@ class TextureOptimizer : EditorWindow
 			}
 			EditorGUILayout.EndHorizontal();
 		}
+
 		EditorGUILayout.EndScrollView();
 	}
 
 	private void DisableMipMaps(TextureImporter importer)
 	{
-		importer.ReadTextureSettings(m_settings);	//and make success false so the process can abort
+		importer.ReadTextureSettings(m_settings); //and make success false so the process can abort
 		m_settings.mipmapEnabled = false;
 		importer.SetTextureSettings(m_settings);
 		importer.SaveAndReimport();

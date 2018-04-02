@@ -6,69 +6,118 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 
-public static class ScriptableObjectUtility
+namespace Core.Utils
 {
-	/// <summary>
-	//	This makes it easy to create, name and place unique new ScriptableObject asset files.
-	/// </summary>
-	public static T CreateAsset<T>(string path = null, bool withLog = false) where T : ScriptableObject
+	public static class ScriptableObjectUtility
 	{
-		T asset = ScriptableObject.CreateInstance<T>();
-		CreateAsset(asset, path, withLog);
-		return asset;
-	}
-
-	public static ScriptableObject CreateAsset(Type type, string path = null, bool withLog = false)
-	{
-		var asset = ScriptableObject.CreateInstance(type);
-		CreateAsset(asset, path, withLog);
-		return asset;
-	}
-
-	private static void CreateAsset(ScriptableObject asset, string path = null, bool withLog = false)
-	{
-		if (string.IsNullOrEmpty(path))
+		/// <summary>
+		//	This makes it easy to create, name and place unique new ScriptableObject asset files.
+		/// </summary>
+		public static T CreateAsset<T>(string path = null, string name = null, bool withLog = false)
+			where T : ScriptableObject
 		{
-			path = AssetDatabase.GetAssetPath(Selection.activeObject);
+			T asset = ScriptableObject.CreateInstance<T>();
+			CreateAsset(asset, path, name, withLog);
+			return asset;
+		}
+
+		public static ScriptableObject CreateAsset(Type type, string path = null, string name = null, bool withLog = false)
+		{
+			var asset = ScriptableObject.CreateInstance(type);
+			CreateAsset(asset, path, name, withLog);
+			return asset;
+		}
+
+		private static void CreateAsset(ScriptableObject asset, string path = null, string name = null, bool withLog = false)
+		{
+			//Debug.Log(path + "; " + name + "; " + asset);
 			if (string.IsNullOrEmpty(path))
 			{
-				path = "Assets";
+				path = AssetDatabase.GetAssetPath(Selection.activeObject);
+				if (string.IsNullOrEmpty(path))
+				{
+					path = "Assets";
+				}
+				else if (Path.GetExtension(path) != "")
+				{
+					path = path.Replace(Path.GetFileName(AssetDatabase.GetAssetPath(Selection.activeObject)), "");
+				}
+				FixName(ref name, asset);
+				FixFolderEnd(ref path);
+				TryAddName(ref path, name);
+				FixPathExtension(ref path);
+				path = AssetDatabase.GenerateUniqueAssetPath(path);
 			}
-			else if (Path.GetExtension(path) != "")
+			else
 			{
-				path = path.Replace(Path.GetFileName(AssetDatabase.GetAssetPath(Selection.activeObject)), "");
+				FixFolderEnd(ref path);
+				FixName(ref name, asset);
+				TryAddName(ref path, name);
 			}
-			path = AssetDatabase.GenerateUniqueAssetPath(path + "/New " + asset.GetType().ToString());
+			if (!path.StartsWith("Assets/"))
+			{
+				path = "Assets/" + path;
+			}
+			FixPathExtension(ref path);
+			CreateFolderIfNotExit(path);
+			AssetDatabase.CreateAsset(asset, path);
+			Undo.RegisterCreatedObjectUndo(asset, "Create object");
+			if (withLog)
+			{
+				Debug.Log("Created " + asset, asset);
+			}
+			AssetDatabase.Refresh();
 		}
-		if (!path.EndsWith(".asset"))
-		{
-			path += ".asset";
-		}
-		CreateFolderIfNotExit(path);
-		AssetDatabase.CreateAsset(asset, path);
-		Undo.RegisterCreatedObjectUndo(asset, "Create object");
-		if (withLog)
-		{
-			Debug.Log("Created " + asset, asset);
-		}
-		AssetDatabase.Refresh();
-	}
 
-	public static void CreateFolderIfNotExit(string path)
-	{
-		if (path.LastIndexOf("/") == -1)
+		private static void FixName(ref string name, ScriptableObject asset)
 		{
-			return;
+			if (string.IsNullOrEmpty(name))
+			{
+				name = "New" + asset.GetType().ToString();
+			}
 		}
-		string fullPath = Application.dataPath;
-		fullPath = fullPath.Substring(0, fullPath.LastIndexOf("/") + 1);
-		fullPath += path;
-		fullPath = fullPath.Substring(0, fullPath.LastIndexOf("/"));
-		if (!Directory.Exists(fullPath))
+
+		private static void FixFolderEnd(ref string path)
 		{
-			Debug.Log("Created folder " + fullPath);
-			Directory.CreateDirectory(fullPath);
+			if (!path.EndsWith("/"))
+			{
+				path += "/";
+			}
 		}
-		AssetDatabase.Refresh();
+
+		private static void TryAddName(ref string path, string name)
+		{
+			if (!string.IsNullOrEmpty(name))
+			{
+				path += name;
+			}
+		}
+
+		private static void FixPathExtension(ref string path)
+		{
+			if (!path.EndsWith(".asset"))
+			{
+				path += ".asset";
+			}
+		}
+
+		public static void CreateFolderIfNotExit(string path)
+		{
+			if (path.LastIndexOf("/") == -1)
+			{
+				return;
+			}
+
+			string fullPath = Application.dataPath;
+			fullPath = fullPath.Substring(0, fullPath.LastIndexOf("/") + 1);
+			fullPath += path;
+			fullPath = fullPath.Substring(0, fullPath.LastIndexOf("/"));
+			if (!Directory.Exists(fullPath))
+			{
+				Debug.Log("Created folder " + fullPath);
+				Directory.CreateDirectory(fullPath);
+			}
+			AssetDatabase.Refresh();
+		}
 	}
 }

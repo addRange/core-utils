@@ -1,0 +1,9 @@
+{
+    "name": "CoreUtils.Android",
+    "references": [],
+    "includePlatforms": [
+        "Android",
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

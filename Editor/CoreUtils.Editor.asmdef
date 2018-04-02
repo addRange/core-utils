@@ -1,0 +1,10 @@
+{
+    "name": "CoreUtils.Editor",
+    "references": [
+        "Core.Utils"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

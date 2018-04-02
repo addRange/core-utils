@@ -1,0 +1,10 @@
+{
+    "name": "TestXCode",
+    "references": [
+        "CoreUtils.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

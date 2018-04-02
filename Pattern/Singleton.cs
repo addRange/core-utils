@@ -1,4 +1,5 @@
 ﻿//Created by Leonid [Zanleo] Voitko (2014)
+
 using UnityEngine;
 
 public class Singleton<T> where T : Singleton<T>, new()
@@ -24,6 +25,7 @@ public class Singleton<T> where T : Singleton<T>, new()
 		{
 			return;
 		}
+
 		_instance = new T();
 		_instance.Init();
 	}
