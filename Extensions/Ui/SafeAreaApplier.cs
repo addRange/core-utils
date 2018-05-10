@@ -59,6 +59,29 @@ public class SafeAreaApplier : MonoBehaviour
 	/// <param name="area">Area in ScreenSpace (pixels)</param>
 	public void ApplySafeArea(Rect area)
 	{
+		if (m_lastAppliedSafeArea == null)
+		{
+			m_lastAppliedSafeArea = new Rect(0, 0, ScreenWidth, ScreenHeight);
+		}
+
+		bool isApplied = Mathf.Approximately(m_lastAppliedSafeArea.Value.x, area.x);
+		if (!Mathf.Approximately(m_lastAppliedSafeArea.Value.y, area.y))
+		{
+			isApplied = false;
+		}
+		if (!Mathf.Approximately(m_lastAppliedSafeArea.Value.width, area.width))
+		{
+			isApplied = false;
+		}
+		if (!Mathf.Approximately(m_lastAppliedSafeArea.Value.height, area.height))
+		{
+			isApplied = false;
+		}
+
+		if (isApplied)
+		{
+			return;
+		}
 		var anchorMin = area.position;
 		var anchorMax = area.position + area.size;
 		anchorMin.x /= ScreenWidth;
@@ -98,4 +121,6 @@ public class SafeAreaApplier : MonoBehaviour
 	private float m_topNotSafeAreaMultiplier = 1f;
 	[SerializeField, Range(0f, 1f)]
 	private float m_bottomNotSafeAreaMultiplier = 1f;
+	
+	private Rect? m_lastAppliedSafeArea = null;
 }

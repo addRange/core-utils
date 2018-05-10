@@ -34,16 +34,19 @@ namespace Social.LeaderBoards
 		public void ReportScore(Action<bool> callback)
 		{
 			IsLoadingOrReporting = true;
-			bool isUnityImpl = UnityEngine.Social.Active.localUser is LocalUser;
-			if (isUnityImpl || !UnityEngine.Social.Active.localUser.authenticated)
+            if (Application.platform == RuntimePlatform.OSXEditor ||
+                Application.platform == RuntimePlatform.LinuxEditor ||
+                Application.platform == RuntimePlatform.WindowsEditor ||
+                !UnityEngine.Social.Active.localUser.authenticated)
 			{
+				IsLoadingOrReporting = false;
+				callback.SafeInvoke(false);
 				// TODO: mark that not reported
 				return;
 			}
 
 			UnityEngine.Social.Active.ReportScore(value, leaderboardID, (reportRes) =>
 			{
-				Debug.Log("ReportScore res=" + reportRes);
 				IsLoadingOrReporting = false;
 				m_reported = reportRes;
 				callback.SafeInvoke(m_reported);

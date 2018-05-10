@@ -2,7 +2,10 @@
 // Created by Leonid [Zanleo] Voitko (2018.01.25)
 //----------------------------------------------------------------------------------------------
 
+//#define Debug_Profile
+
 using System.Collections.Generic;
+using System.Diagnostics;
 using CodeStage.AntiCheat.ObscuredTypes;
 using UnityEngine;
 using UnityEngine.Analytics;
@@ -14,6 +17,12 @@ namespace Core.Utils.Game
 		where T : Profile<T, TData>
 		where TData : ProfileData, new()
 	{
+		[Conditional("Debug_Profile"), DebuggerStepThrough]
+		private void Log(string msg)
+		{
+			Debug.Log(this + "(" + this.GetHashCode() + "). " + msg, this);
+		}
+		
 		protected override void Init()
 		{
 			base.Init();
@@ -72,16 +81,24 @@ namespace Core.Utils.Game
 			string res = ObscuredPrefs.GetString(MainSaveKey, string.Empty);
 			if (string.IsNullOrEmpty(res))
 			{
+				Log("Load No data " + ";" + MainSaveKey);
 				return;
 			}
-			Data.DeInit();
+
+			if (Data != null)
+			{
+				Log("Deinit old data " + JsonUtility.ToJson(Data, true));
+				Data.DeInit();
+			}
 			Data = JsonUtility.FromJson<TData>(ObscuredPrefs.GetString(MainSaveKey, string.Empty));
+			Log("Load data " + JsonUtility.ToJson(Data, true) + ";" + MainSaveKey);
 			InitData();
 		}
 
 		//[ContextMenu("Save")]
 		protected void Save()
 		{
+			Log("Save '" + MainSaveKey + "'; " + GetObjString(Data) + "; " + JsonUtility.ToJson(Data, true));
 			ObscuredPrefs.SetString(MainSaveKey, JsonUtility.ToJson(Data));
 			ObscuredPrefs.Save();
 		}
@@ -89,13 +106,23 @@ namespace Core.Utils.Game
 		//[ContextMenu("Delete All")]
 		protected void Clear()
 		{
-			PlayerPrefs.DeleteAll();
 			ObscuredPrefs.DeleteAll();
-			Debug.Log("Cleared");
+			Log("Cleared");
 			Data = new TData();
-			PlayerPrefs.Save();
+			ObscuredPrefs.Save();
 		}
-		public TData Data { get; private set; }
+
+		protected virtual string GetObjString(ProfileData obj) { return (obj == null ? "null" : obj.GetHashCode().ToString()); }
+
+		public TData Data
+		{
+			get { return m_data; }
+			private set
+			{
+				Log(GetObjString(m_data) + " => " + GetObjString(value));
+				m_data = value;
+			}
+		}
 
 		/// <summary>
 		/// Key that can be changed while not in production for reset saves if change something, that can broke game from old saves)
@@ -104,5 +131,7 @@ namespace Core.Utils.Game
 		{
 			get { return "ProfileData"; }
 		}
+
+		private TData m_data;
 	}
 }

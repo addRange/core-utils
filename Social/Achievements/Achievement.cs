@@ -29,9 +29,12 @@ namespace Social.Achievements
 		public void ReportProgress(Action<bool> callback)
 		{
 			Profiler.BeginSample("ReportProgress");
-			bool isUnityImpl = UnityEngine.Social.Active.localUser is LocalUser;
-			if (isUnityImpl || !UnityEngine.Social.Active.localUser.authenticated)
+            if (Application.platform == RuntimePlatform.OSXEditor ||
+                Application.platform == RuntimePlatform.LinuxEditor ||
+                Application.platform == RuntimePlatform.WindowsEditor ||
+                !UnityEngine.Social.Active.localUser.authenticated)
 			{
+				callback.SafeInvoke(false);
 				// TODO: mark that not reported
 				Profiler.EndSample();
 				return;

@@ -82,6 +82,15 @@ namespace ChillyRoom.UnityEditor.iOS.Xcode
             values[key] = new PlistElementBoolean(val);
         }
 
+        public PlistElementArray GetOrCreateArray(string key)
+        {
+			  if (values.ContainsKey(key))
+			  {
+				  return values[key] as PlistElementArray;
+			  }
+			  return CreateArray(key);
+		  }
+
         public PlistElementArray CreateArray(string key)
         {
             var v = new PlistElementArray();

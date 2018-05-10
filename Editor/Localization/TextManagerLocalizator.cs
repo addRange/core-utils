@@ -135,6 +135,10 @@ public class TextManagerLocalizator : IPreprocessBuild, IPostprocessBuild
 			return;
 		}
 		var tm = TextManager.GetComponentOnly();
+		if (tm.LanguagesForLocalizationBuild.Count == 0)
+		{
+			return;
+		}
 
 		var projPath = PBXProject.GetPBXProjectPath(path);
 		var proj = new PBXProject();
