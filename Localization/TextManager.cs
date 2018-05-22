@@ -189,7 +189,7 @@ public class TextManager : SingletonGameObject<TextManager>
 		{
 			return;
 		}
-		var dirPath = Path.GetDirectoryName(path);
+		var dirPath = Path.GetDirectoryName(fullPath);
 		Directory.CreateDirectory(dirPath);
 		using (var writer = File.CreateText(fullPath))
 		{
