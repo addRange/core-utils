@@ -68,7 +68,7 @@ namespace Core.Utils.Game
 			}
 		}
 		
-		public new static string GetPathToPrefab()
+		public new static string GetPathToAsset()
 		{
 			var pathToRes = PathToPrefabs + "Profile";
 			return pathToRes;

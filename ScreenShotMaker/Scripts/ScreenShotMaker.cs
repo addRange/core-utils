@@ -145,8 +145,10 @@ public class ScreenShotMaker : MonoBehaviour
 			.Replace(":", ""); //get DatetimeTag
 		// HACK for almost immidiatly screenShot)
 		Time.captureFramerate = int.MaxValue;
+#if UNITY_EDITOR
 		bool isSomeSafeAreaApplied = false;
 		SafeAreaApplier[] applieres = null;
+#endif
 		while (m_i < ScreenShotSizes.Count)
 		{
 			var curItem = ScreenShotSizes[m_i];

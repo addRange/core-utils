@@ -11,6 +11,7 @@
 <e text = "Core.Utils.Assert:IsNull" />
 <e text = "Core.Utils.Assert:IsNotNull" />
 <e text = "Core.Utils.Game.Profile`2:Log" />
+<e text = "SingletonScriptableObject`1:Log" />
 </Entries>
 </SettingsList>
 </root>

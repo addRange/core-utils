@@ -8,11 +8,11 @@ using System.Collections.Generic;
 
 public static class ListExtensions
 {
-	public static T Random<T>(this List<T> _this)
+	public static T Random<T>(this IList<T> _this)
 	{
 		return Random(_this, UnityEngine.Random.Range);
 	}
-	public static T Random<T>(this List<T> _this, Func<int, int, int> randomFunc)
+	public static T Random<T>(this IList<T> _this, Func<int, int, int> randomFunc)
 	{
 		if (_this.Count == 0)
 		{

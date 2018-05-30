@@ -27,6 +27,8 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 	{
 		get
 		{
+			Assert.IsFalse(m_applicationIsQuitting, "AapplicationIsQuitting true while somebody try get instance of " + typeof(T));
+
 			if (s_instance == null)
 			{
 #if UNITY_EDITOR
@@ -69,11 +71,42 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 			return;
 		}
 
-		UnityEngine.Object resource = Resources.Load(GetPathToPrefab());
-		Assert.IsNotNull(resource, "Resource not found for '" + GetPathToPrefab() + "'");
+		var resource = Resources.Load(GetPathToAsset());
+#if UNITY_EDITOR
+		if (resource == null)
+		{
+			SingletonGameObjectsConfig.Instance[typeof(T)].Enabled = true;
+
+			var asms = AppDomain.CurrentDomain.GetAssemblies();
+			Type sgUtilType = null;
+			foreach (var assembly in asms)
+			{
+				sgUtilType = assembly.GetType("SingletonGameobjectUtility");
+				if (sgUtilType != null)
+				{
+					break;
+				}
+			}
+		
+			var checkTypesMethod = sgUtilType.GetMethod("CheckTypes",
+				System.Reflection.BindingFlags.Static |
+				System.Reflection.BindingFlags.Public |
+				System.Reflection.BindingFlags.NonPublic |
+				System.Reflection.BindingFlags.FlattenHierarchy);
+			try
+			{
+				checkTypesMethod.Invoke(null, null);
+			}
+			catch
+			{
+			}
+			resource = Resources.Load(GetPathToAsset());
+		}
+#endif
+		Assert.IsNotNull(resource, "Resource not found for '" + GetPathToAsset() + "'");
 
 		GameObject instanceObject = GameObject.Instantiate(resource) as GameObject;
-		instanceObject.name = typeof(T).ToString();
+		instanceObject.name = typeof(T).Name.ToString();
 		Assert.IsNotNull(instanceObject, "Failed create Object of the " + typeof(T).ToString());
 
 		//s_instance = instanceObject.GetComponent<T>();
@@ -126,6 +159,8 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 
 	protected virtual void DeInit()
 	{
+		m_applicationIsQuitting = true;
+
 		if (s_instance == this)
 		{
 			s_instance = null;
@@ -139,11 +174,11 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 #if UNITY_EDITOR
 		if (!Application.isPlaying)
 		{
-			string path = "Assets/Resources/" + GetPathToPrefab() + ".prefab";
+			string path = "Assets/Resources/" + GetPathToAsset() + ".prefab";
 			return UnityEditor.AssetDatabase.LoadAssetAtPath<T>(path);
 		}
 #endif
-		T resource = Resources.Load<T>(GetPathToPrefab());
+		T resource = Resources.Load<T>(GetPathToAsset());
 		if (resource == null)
 		{
 			return null;
@@ -152,7 +187,7 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 		return resource;
 	}
 
-	public static string GetPathToPrefab()
+	public static string GetPathToAsset()
 	{
 		string pathToRes = typeof(T).ToString().Replace('.', '/');
 		pathToRes = PathToPrefabs + pathToRes;
@@ -164,4 +199,5 @@ public abstract class SingletonGameObject<T> : MonoBehaviour where T : Singleton
 
 	protected static string PathToPrefabs = "Prefabs/Scripts/";
 	private static bool m_deiniting = false;
+	private static bool m_applicationIsQuitting = false;
 }

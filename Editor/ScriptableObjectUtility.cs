@@ -114,7 +114,7 @@ namespace Core.Utils
 			fullPath = fullPath.Substring(0, fullPath.LastIndexOf("/"));
 			if (!Directory.Exists(fullPath))
 			{
-				Debug.Log("Created folder " + fullPath);
+				//Debug.Log("Created folder " + fullPath);
 				Directory.CreateDirectory(fullPath);
 			}
 			AssetDatabase.Refresh();

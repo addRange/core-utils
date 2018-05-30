@@ -28,6 +28,8 @@ public class TextManager : SingletonGameObject<TextManager>
 	protected override void Init()
 	{
 		base.Init();
+		CurrentLanguage = SystemLanguage.Unknown;
+		CurrentLanguageChanged = false;
 		// TODO: later load saved
 		if (LoadSaved())
 		{
@@ -81,6 +83,10 @@ public class TextManager : SingletonGameObject<TextManager>
 			return;
 		}
 
+		if (CurrentLanguage == currentLanguage)
+		{
+			return;
+		}
 		CurrentLanguage = currentLanguage;
 		if (m_dictionary.Count > 0)
 		{
