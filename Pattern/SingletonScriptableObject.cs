@@ -7,9 +7,11 @@
 using System.Diagnostics;
 using System.IO;
 using Core.Utils;
-using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public abstract class SingletonScriptableObject<T> : ScriptableObject where T : SingletonScriptableObject<T>
 {
@@ -45,9 +47,25 @@ public abstract class SingletonScriptableObject<T> : ScriptableObject where T : 
 			{
 				relativePath = relativePath.Substring("Assets/".Length);
 			}
+			else
+			{
+				filePath = "Assets/Resources/" + filePath;
+				relativePath = "Resources/" + relativePath;
+			}
+
 			var fullPath = Application.dataPath + "/" + relativePath;
+			if (!fullPath.EndsWith(".asset"))
+			{
+				fullPath += ".asset";
+			}
+			if (!filePath.EndsWith(".asset"))
+			{
+				filePath += ".asset";
+			}
 			var dirPath = Path.GetDirectoryName(fullPath);
+			Debug.Log(dirPath + "; " + fullPath);
 			Directory.CreateDirectory(dirPath);
+			AssetDatabase.Refresh();
 			AssetDatabase.CreateAsset(s_instance, filePath);
 			Debug.Log("AutoCreated " + typeof(T) + " by path " + filePath, s_instance);
 		}
