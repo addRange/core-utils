@@ -238,8 +238,14 @@ namespace Effects
 			base.DeInit();
 		}
 
+		private void OnApplicationQuit() { UnloadEffects(); }
+
 		private void UnloadEffects()
 		{
+			if (m_activeEffects.Count == 0)
+			{
+				return;
+			}
 			for (int i = 0; i < m_activeEffects.Count; i++)
 			{
 				var mActiveEffect = m_activeEffects[i];
@@ -249,16 +255,16 @@ namespace Effects
 				mActiveEffect.Stop();
 			}
 #if COLLECT_STATS_MODE
-		StringBuilder sb = new StringBuilder();
-		foreach (var effectGroup in m_effectGroups)
-		{
-			foreach (var effectsGroup in effectGroup.Value)
+			StringBuilder sb = new StringBuilder();
+			foreach (var effectGroup in m_effectGroups)
 			{
-				effectsGroup.Value.GetPrintCollectedStats(sb);
-				sb.AppendLine();
+				foreach (var effectsGroup in effectGroup.Value)
+				{
+					effectsGroup.Value.GetPrintCollectedStats(sb);
+					sb.AppendLine();
+				}
 			}
-		}
-		Debug.Log(sb.ToString());
+			Debug.Log(sb.ToString());
 #endif
 			m_activeEffects.Clear();
 #if UNITY_EDITOR

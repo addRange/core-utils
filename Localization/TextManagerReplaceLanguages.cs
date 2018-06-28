@@ -6,39 +6,42 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TextManagerReplaceLanguages : ScriptableObject
+namespace Localization
 {
-	[Serializable]
-	private class LangForReplace
+	public class TextManagerReplaceLanguages : ScriptableObject
 	{
-		public SystemLanguage LanguageForReplace
+		[Serializable]
+		private class LangForReplace
 		{
-			get { return m_languageForReplace; }
+			public SystemLanguage LanguageForReplace
+			{
+				get { return m_languageForReplace; }
+			}
+
+			public SystemLanguage LangWhichReplace
+			{
+				get { return m_langWhichReplace; }
+			}
+
+			[SerializeField]
+			private SystemLanguage m_languageForReplace = SystemLanguage.English;
+
+			[SerializeField]
+			private SystemLanguage m_langWhichReplace = SystemLanguage.English;
 		}
 
-		public SystemLanguage LangWhichReplace
+		public SystemLanguage TryGetCorrectedLanguage(SystemLanguage forCorrection)
 		{
-			get { return m_langWhichReplace; }
+			var targ = m_replaceList.Find(r => r.LanguageForReplace == forCorrection);
+			if (targ == null)
+			{
+				return SystemLanguage.Unknown;
+			}
+
+			return targ.LangWhichReplace;
 		}
 
 		[SerializeField]
-		private SystemLanguage m_languageForReplace = SystemLanguage.English;
-
-		[SerializeField]
-		private SystemLanguage m_langWhichReplace = SystemLanguage.English;
+		private List<LangForReplace> m_replaceList = new List<LangForReplace>();
 	}
-
-	public SystemLanguage TryGetCorrectedLanguage(SystemLanguage forCorrection)
-	{
-		var targ = m_replaceList.Find(r => r.LanguageForReplace == forCorrection);
-		if (targ == null)
-		{
-			return SystemLanguage.Unknown;
-		}
-
-		return targ.LangWhichReplace;
-	}
-
-	[SerializeField]
-	private List<LangForReplace> m_replaceList = new List<LangForReplace>();
 }

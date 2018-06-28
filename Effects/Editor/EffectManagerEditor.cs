@@ -88,7 +88,7 @@ namespace Effects
 				var effectPlayer = founded.GetComponent<EffectPlayer>();
 				if (effectPlayer == null)
 				{
-					Debug.LogAssertion("Wrong prefab withou EffectPlayer", founded);
+					Debug.LogAssertion("Wrong prefab without EffectPlayer " + founded, founded);
 					listEffects.Remove(founded);
 					continue;
 				}
