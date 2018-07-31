@@ -1,25 +1,37 @@
 //----------------------------------------------------------------------------------------------
-// Created by Leonid [Zanleo] Voitko (1/13/2016)
+// Created by Leonid [Zanleo] Voitko (2018.07.12)
 //----------------------------------------------------------------------------------------------
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Effects.Player.Audio
 {
 	[Serializable]
-	[RequireComponent(typeof(AudioSource))]
-	public class AudioPlayer : EffectPlayer
+	public class RandomAudioPlayer : EffectPlayer
 	{
-		protected void Awake() { m_startVolume = Volume; }
+		protected void Awake()
+		{
+			m_startVolumes = new float[m_audioSources.Length];
+			for (var i = 0; i < m_audioSources.Length; i++)
+			{
+				m_startVolumes[i] = m_audioSources[i].volume;
+			}
+
+			m_curAudioSourceIndex = Random.Range(0, m_audioSources.Length);
+			m_curAudioSource = m_audioSources[m_curAudioSourceIndex];
+		}
 
 		public override void Play(Transform parent, Vector3 pos, Quaternion rot)
 		{
 			base.Play(parent, pos, rot);
-			Volume = m_startVolume;
-			m_audioSource.Play();
+			m_curAudioSourceIndex = Random.Range(0, m_audioSources.Length);
+			m_curAudioSource = m_audioSources[m_curAudioSourceIndex];
+			Volume = m_startVolumes[m_curAudioSourceIndex];
+			m_curAudioSource.Play();
 			//if (CheckDebug(parent)) { Debug.Log(GetInfo("Play "), this); }
 		}
 
@@ -41,7 +53,7 @@ namespace Effects.Player.Audio
 				StopCoroutine(m_fadeCoroutine);
 			}
 
-			m_audioSource.Stop();
+			m_curAudioSource.Stop();
 			base.Stop();
 		}
 
@@ -52,19 +64,19 @@ namespace Effects.Player.Audio
 		{
 			List<string> parameters = new List<string>
 			{
-				(m_audioSource.isActiveAndEnabled ? "isActiveAndEnabled" : "not act/en"),
-				(m_audioSource.isPlaying ? "IsPlaying" : "not playing"),
-				("Time = " + m_audioSource.time),
-				(m_audioSource.isVirtual ? "isVirtual" : "not isVirtual"),
-				(m_audioSource.ignoreListenerPause ? "ignoreListenerPause" : "not ignoreListenerPause"),
-				(m_audioSource.mute ? "mute" : "not mute"),
+				(m_curAudioSource.isActiveAndEnabled ? "isActiveAndEnabled" : "not act/en"),
+				(m_curAudioSource.isPlaying ? "IsPlaying" : "not playing"),
+				("Time = " + m_curAudioSource.time),
+				(m_curAudioSource.isVirtual ? "isVirtual" : "not isVirtual"),
+				(m_curAudioSource.ignoreListenerPause ? "ignoreListenerPause" : "not ignoreListenerPause"),
+				(m_curAudioSource.mute ? "mute" : "not mute"),
 #if UNITY_EDITOR
 				(UnityEditor.EditorApplication.isPaused ? "playerIsPaused" : "not playerIsPaused"),
 #endif
 				(AudioListener.pause ? "pause" : "not pause"),
 				this.ToString()
 			};
-			if (m_audioSource.clip != null)
+			if (m_curAudioSource.clip != null)
 			{
 				//float clipLoudness = -1f;
 				//if (m_audioSource.clip.loadType == AudioClipLoadType.DecompressOnLoad)
@@ -82,10 +94,10 @@ namespace Effects.Player.Audio
 				parameters.InsertRange(
 					0, new string[]
 					{
-						"Name: " + m_audioSource.clip.name,
-						"LoadState: " + m_audioSource.clip.loadState.ToString(),
-						"time: " + m_audioSource.time + "/" + m_audioSource.clip.length,
-						"samples: " + m_audioSource.timeSamples + "/" + m_audioSource.clip.samples,
+						"Name: " + m_curAudioSource.clip.name,
+						"LoadState: " + m_curAudioSource.clip.loadState.ToString(),
+						"time: " + m_curAudioSource.time + "/" + m_curAudioSource.clip.length,
+						"samples: " + m_curAudioSource.timeSamples + "/" + m_curAudioSource.clip.samples,
 						//"clipLoudness: " + clipLoudness,
 					});
 			}
@@ -102,7 +114,10 @@ namespace Effects.Player.Audio
 			base.SetState(et, state);
 			if (m_soundType == et)
 			{
-				m_audioSource.mute = !state;
+				foreach (var audioSource in m_audioSources)
+				{
+					audioSource.mute = !state;
+				}
 			}
 		}
 
@@ -161,7 +176,7 @@ namespace Effects.Player.Audio
 			Volume = toVolume;
 			if (withStop)
 			{
-				m_audioSource.Stop();
+				m_curAudioSource.Stop();
 			}
 
 			//if (CheckDebug(transform.parent)) { Debug.Log(GetInfo("End FadeCoroutine " + fromVolume + " => " + toVolume), this); }
@@ -179,35 +194,35 @@ namespace Effects.Player.Audio
 		protected override void OnValidate()
 		{
 			base.OnValidate();
-			if (m_audioSource == null)
+			if (m_curAudioSource == null)
 			{
-				m_audioSource = GetComponent<AudioSource>();
+				m_curAudioSource = GetComponent<AudioSource>();
 			}
 		}
 
 		public float Volume
 		{
-			get { return m_audioSource.volume; }
-			set { m_audioSource.volume = value; }
+			get { return m_curAudioSource.volume; }
+			set { m_curAudioSource.volume = value; }
 		}
 
 		public float Length
 		{
-			get { return m_audioSource.clip.length; }
+			get { return m_curAudioSource.clip.length; }
 		}
 
 		public float RemainLength
 		{
-			get { return m_audioSource.clip.length - m_audioSource.time; }
+			get { return m_curAudioSource.clip.length - m_curAudioSource.time; }
 		}
 
 		public override bool IsPlaying
 		{
 			get
 			{
-				if (m_audioSource.isActiveAndEnabled)
+				if (m_curAudioSource.isActiveAndEnabled)
 				{
-					if (m_audioSource.clip != null && m_audioSource.clip.loadState == AudioDataLoadState.Loading)
+					if (m_curAudioSource.clip != null && m_curAudioSource.clip.loadState == AudioDataLoadState.Loading)
 					{
 						return true;
 					}
@@ -220,7 +235,7 @@ namespace Effects.Player.Audio
 #endif
 				}
 
-				return m_audioSource.isPlaying;
+				return m_curAudioSource.isPlaying;
 			}
 		}
 
@@ -231,11 +246,11 @@ namespace Effects.Player.Audio
 
 		public float StartVolume
 		{
-			get { return m_startVolume; }
+			get { return m_startVolumes[m_curAudioSourceIndex]; }
 		}
 
 		[SerializeField]
-		private AudioSource m_audioSource;
+		private AudioSource[] m_audioSources = new AudioSource[0];
 
 		[SerializeField]
 		private EffectType m_soundType = EffectType.Sound;
@@ -245,8 +260,10 @@ namespace Effects.Player.Audio
 		[SerializeField]
 		private bool m_fadeRealTime = false;
 
-		private float m_startVolume = 1;
+		private float[] m_startVolumes = null;
 
+		private int m_curAudioSourceIndex = -1;
+		private AudioSource m_curAudioSource;
 		private Coroutine m_fadeCoroutine = null;
 		//private float[] m_sampleData = new float[1024];
 	}

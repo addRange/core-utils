@@ -24,6 +24,7 @@ namespace Effects
 		}
 
 		public bool IsStatic { get { return m_isStatic; } set { m_isStatic = value; } }
+		public int StaticCount { get { return m_staticCount; } }
 		public GamePlace GamePlace { get { return m_gamePlace; } }
 		public string EffectName { get { return m_effectName; } }
 
@@ -59,16 +60,6 @@ namespace Effects
 			if (m_effectName == m_effectPath || string.IsNullOrEmpty(m_effectPath))
 			{
 				m_effectPath = string.Empty;
-			}
-		}
-
-		[Conditional("UNITY_EDITOR"), ContextMenu("Validate")]
-		private void OnValidate()
-		{
-			if (m_isStatic && m_staticCount == 0)
-			{
-				m_staticCount = m_maxCount;
-				UnityEngine.Debug.Log("Auto set static count for static effect to max '" + m_effectName + "'; " + m_maxCount);
 			}
 		}
 

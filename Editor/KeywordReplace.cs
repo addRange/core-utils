@@ -57,6 +57,7 @@ public class KeywordReplace : UnityEditor.AssetModificationProcessor
 																				{
 																					{"zanleo", "Leonid [Zanleo] Voitko"},
 																					{"anton", "Anton [Umka] Ushkalov"},
-																					{"pavel", "Pavel Totolin"}
+																					{"pavel", "Pavel Totolin"},
+																					{"karytich", "Artem Korytko"}
 																				};
 }

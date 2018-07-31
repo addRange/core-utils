@@ -2,14 +2,24 @@
 // author Leonid [Zanleo] Voitko
 //----------------------------------------------------------------------------------------------
 
+//#define DEBUG_SOCIAL
+
 using System;
+using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.SocialPlatforms.Impl;
+using Debug = UnityEngine.Debug;
 
 namespace Social
 {
 	public class Social : SingletonGameObject<Social>
 	{
+		[Conditional("DEBUG_SOCIAL")]
+		public static void Log(string msg)
+		{
+			Debug.Log("Social. " + msg);
+		}
+
 		public SocialPlatform GetSocialPlatform()
 		{
 #if UNITY_EDITOR
@@ -29,21 +39,26 @@ namespace Social
 
 		public void TryConnect(Action<bool, string> callback)
 		{
+			Log("TryConnect");
 			if (UnityEngine.Social.Active == null)
 			{
+				Log("no active socail platform");
 				callback.SafeInvoke(false, NoActivePlatform);
 				return;
 			}
 			if (UnityEngine.Social.Active.localUser == null)
 			{
+				Log("no localUser");
 				callback.SafeInvoke(false, NoLocalUser);
 				return;
 			}
 			if (!UnityEngine.Social.Active.localUser.authenticated)
 			{
+				Log("not authenticated");
 				IsConnecting = true;
 				UnityEngine.Social.Active.localUser.Authenticate((res, error) =>
 				{
+					Log("On Authenticate " + res + ": " + error);
 #if UNITY_EDITOR
 					var localUser = UnityEngine.Social.Active.localUser as LocalUser;
 					if (localUser != null)

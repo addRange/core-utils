@@ -5,6 +5,9 @@
 // later need write editor for autoConfigurates statics and max play count
 // mode of collecting EffectInfo statistic
 //#define COLLECT_STATS_MODE
+#if UNITY_EDITOR
+#define DETECT_REMOVED_EFFECTS_NAMES
+#endif
 
 using System;
 using System.Collections.Generic;
@@ -14,7 +17,7 @@ using UnityEngine.Profiling;
 #if COLLECT_STATS_MODE
 using System.Text;
 #endif
-#if UNITY_EDITOR
+#if DETECT_REMOVED_EFFECTS_NAMES
 using System.Linq;
 #endif
 
@@ -50,33 +53,55 @@ namespace Effects
 				Effects = new List<EffectInfo>();
 
 				string path = m_effectManager.GetGamePlaceEffectPath(effectsProperties.GamePlace);
-				Resource = Resources.Load<GameObject>(path + effectsProperties.EffectPath);
+				string fullPath = path + effectsProperties.EffectPath;
+				//Debug.Log(effectsProperties.EffectName + "; " + fullPath);
+				Resource = Resources.Load<GameObject>(fullPath);
 				if (Resource == null)
 				{
 					effectsProperties.MaxCount = 0;
-					Assert.IsTrue(false, "Can't load effect at '" + path + effectsProperties.EffectPath + "'");
+					Assert.IsTrue(false, "Can't load effect at '" + fullPath + "'");
 				}
 				else
 				{
-#if !UNITY_EDITOR
-// disable resource for not enable/disable instantiated
-				Resource.gameObject.SetActive(false);
-#endif
+					// Or not disable, because on device we not load resources
+//#if !UNITY_EDITOR
+//					// disable resource for not enable/disable instantiated
+//					Resource.gameObject.SetActive(false);
+//#endif
 				}
 			}
-
-			public EffectInfo GetEffectInfoForPlay(int priority, List<EffectPlayer> activeEffects)
+			
+			private EffectInfo GetEffectInfoForPlay(int priority)
 			{
-				EffectInfo best = Effects.Find(ei => !activeEffects.Contains(ei.EffectPlayer));
+				EffectInfo best = null;
+				if (Effects.Count > 0)
+				{
+					++m_lastUsedEffectIndex;
+					m_lastUsedEffectIndex %= Effects.Count;
+					for (int i = 0; i < Effects.Count; ++i)
+					{
+						int targIndex = m_lastUsedEffectIndex + i;
+						targIndex %= Effects.Count;
+						var targEffectInfo = Effects[targIndex];
+						if (m_activeEffects.Contains(targEffectInfo.EffectPlayer))
+						{
+							continue;
+						}
+						best = targEffectInfo;
+						m_lastUsedEffectIndex = targIndex;
+					}
+				}
+				//EffectInfo best = Effects.Find(ei => !activeEffects.Contains(ei.EffectPlayer));
 				if (best == null)
 				{
 					if (Effects.Count < EffectsProperties.MaxCount)
 					{
 						best = CreateEffectInfo();
+						m_lastUsedEffectIndex = Effects.Count - 1;
 					}
 					else
 					{
-						var possibleEffects = Effects; //.FindAll(e => e.Priority <= priority);
+						var possibleEffects = Effects;//.FindAll(e => e.Priority <= priority);
 						if (possibleEffects.Count > 0)
 						{
 							best = possibleEffects[0];
@@ -88,9 +113,9 @@ namespace Effects
 										if (best.LastPlayTime >= possibleEffects[i].LastPlayTime)
 										{
 											best = possibleEffects[i];
+											m_lastUsedEffectIndex = i;
 										}
 									}
-
 									break;
 								case PriorityType.Priority:
 									for (int i = 1; i < possibleEffects.Count; i++)
@@ -98,9 +123,9 @@ namespace Effects
 										if (best.Priority >= possibleEffects[i].Priority)
 										{
 											best = possibleEffects[i];
+											m_lastUsedEffectIndex = i;
 										}
 									}
-
 									break;
 								case PriorityType.Distance:
 								case PriorityType.PriorityAndDist:
@@ -108,24 +133,30 @@ namespace Effects
 									break;
 							}
 						}
-
 						/* TODO: Get best EffectInfo by PriorityType */
 					}
 				}
-
 				if (best == null)
 				{
 					Assert.IsTrue(false, "Effect not found " + EffectsProperties.EffectName);
 					return null;
 				}
-
 				best.Priority = priority;
 				return best;
 			}
 
-			public void CreateMaxEffects()
+			public void CreateStaticEffects()
 			{
-				for (int i = Effects.Count; i < EffectsProperties.MaxCount; ++i)
+				if (!EffectsProperties.IsStatic)
+				{
+					return;
+				}
+				int staticCount = EffectsProperties.StaticCount;
+				if (staticCount == 0)
+				{
+					staticCount = EffectsProperties.MaxCount;
+				}
+				for (int i = Effects.Count; i < staticCount; ++i)
 				{
 					CreateEffectInfo();
 				}
@@ -133,15 +164,27 @@ namespace Effects
 
 			public void Unload()
 			{
+				Profiler.BeginSample("EffectGroup.Unload");
+				for (int j = 0; j < m_activeEffects.Count; j++)
+				{
+					var effectPlayer = m_activeEffects[j];
+					effectPlayer.Stop();
+				}
+
+#if DETECT_REMOVED_EFFECTS_NAMES
+				m_activeEffectNames.Clear();
+#endif
+				m_activeEffects.Clear();
 				for (int i = 0; i < Effects.Count; i++)
 				{
 					var effectInfo = Effects[i];
 					DestroyImmediate(effectInfo.EffectPlayer.gameObject);
 				}
-
 				Effects.Clear();
 				Resources.UnloadAsset(Resource);
 				Resource = null;
+
+				Profiler.EndSample();
 			}
 
 			private EffectInfo CreateEffectInfo()
@@ -163,7 +206,7 @@ namespace Effects
 			/// <param name="rot"></param>
 			/// <param name="effectPlayer"></param>
 			/// <returns>True if terminated played effect</returns>
-			public bool Play(EffectInfo effectInfo, Transform parent, Vector3 pos, Quaternion rot, out EffectPlayer effectPlayer)
+			private bool Play(EffectInfo effectInfo, Transform parent, Vector3 pos, Quaternion rot, out EffectPlayer effectPlayer)
 			{
 				bool terminated = false;
 				effectPlayer = effectInfo.EffectPlayer;
@@ -172,40 +215,163 @@ namespace Effects
 					terminated = true;
 					effectPlayer.Stop();
 				}
-
 				effectInfo.LastPlayTime = Time.realtimeSinceStartup;
 				effectPlayer.Play(parent, pos, rot);
 				PlayCollectStats();
 				return terminated;
 			}
 
+			public EffectPlayer TryPlayEffect(
+				int priority, Transform parent, Vector3 pos, Quaternion rot, Dictionary<EffectType, bool> curEffectStates)
+			{
+				EffectInfo effectInfo = GetEffectInfoForPlay(priority);
+				if (effectInfo == null)
+				{
+					Profiler.EndSample();
+					return null;
+				}
+
+				foreach (var curEffectState in curEffectStates)
+				{
+					effectInfo.EffectPlayer.SetState(curEffectState.Key, curEffectState.Value);
+				}
+				EffectPlayer player = null;
+				bool isTerminated = Play(effectInfo, parent, pos, rot, out player);
+				if (isTerminated)
+				{
+#if DETECT_REMOVED_EFFECTS_NAMES
+				int index = m_activeEffects.IndexOf(player);
+				m_activeEffectNames.RemoveAt(index);
+#endif
+					m_activeEffects.Remove(player);
+				}
+				m_activeEffects.Add(player);
+#if DETECT_REMOVED_EFFECTS_NAMES
+			m_activeEffectNames.Add(player.name);
+#endif
+				return player;
+			}
+
+			public void UnloadEffects()
+			{
+				for (int i = 0; i < m_activeEffects.Count; i++)
+				{
+					var mActiveEffect = m_activeEffects[i];
+#if DETECT_REMOVED_EFFECTS_NAMES
+				Assert.IsNotNull(mActiveEffect, m_activeEffectNames[i]);
+#endif
+					mActiveEffect.Stop();
+				}
+				m_activeEffects.Clear();
+#if DETECT_REMOVED_EFFECTS_NAMES
+			m_activeEffectNames.Clear();
+#endif
+			}
+
+			public void Tick()
+			{
+				for (var i = 0; i < m_activeEffects.Count; i++)
+				{
+					var activeEffectPlayer = m_activeEffects[i];
+#if DETECT_REMOVED_EFFECTS_NAMES
+					Assert.IsNotNull(activeEffectPlayer, m_activeEffectNames[i]);
+#endif
+					Profiler.BeginSample("ActiveEffect.IsPlaying", activeEffectPlayer);
+					if (activeEffectPlayer.IsPlaying)
+					{
+						Profiler.EndSample();
+						continue;
+					}
+
+					Profiler.EndSample();
+					Profiler.BeginSample("ActiveEffect.Stop/Remove", activeEffectPlayer);
+					activeEffectPlayer.Stop();
+					Assert.IsFalse(activeEffectPlayer.DontChangeTransform, "DontChangeTransform seted on " + activeEffectPlayer);
+					m_activeEffects.Remove(activeEffectPlayer);
+#if DETECT_REMOVED_EFFECTS_NAMES
+					m_activeEffectNames.RemoveAt(i);
+#endif
+					--i;
+					Profiler.EndSample();
+				}
+			}
+
+			public void CollectAllChildActiveEffects()
+			{
+				List<EffectPlayer> notDisabledEffects = new List<EffectPlayer>();
+				for (int i = 0; i < m_activeEffects.Count; i++)
+				{
+					var e = m_activeEffects[i];
+#if DETECT_REMOVED_EFFECTS_NAMES
+					Assert.IsNotNull(e, m_activeEffectNames[i]);
+#endif
+					if (m_activeEffects[i].transform.parent == null)
+					{
+						notDisabledEffects.Add(m_activeEffects[i]);
+						continue;
+					}
+					e.Stop();
+					e.transform.SetParent(m_effectManager.transform, false);
+				}
+				m_activeEffects.Clear();
+				m_activeEffects.AddRange(notDisabledEffects);
+
+#if DETECT_REMOVED_EFFECTS_NAMES
+				m_activeEffectNames.Clear();
+				m_activeEffectNames.AddRange(m_activeEffects.Select(e => e.name));
+#endif
+			}
+
+			public List<EffectPlayer> StopActiveEffectsByTag(Transform configParent)
+			{
+				var res = GetActiveEffectsByTag(configParent);
+				foreach (var effectPlayer in res)
+				{
+					effectPlayer.Stop();
+				}
+				m_activeEffects.RemoveAll(ae => res.Contains(ae));
+#if DETECT_REMOVED_EFFECTS_NAMES
+				foreach (var effectPlayer in res)
+				{
+					int index = m_activeEffects.IndexOf(effectPlayer);
+					m_activeEffectNames.RemoveAt(index);
+				}
+#endif
+				return res;
+			}
+
+			public List<EffectPlayer> GetActiveEffectsByTag(Transform configParent)
+			{
+				return m_activeEffects.FindAll(ae => ae.transform.parent == configParent);
+			}
+
 			[System.Diagnostics.Conditional("COLLECT_STATS_MODE")]
 			private void PlayCollectStats()
 			{
 #if COLLECT_STATS_MODE
-			PlayCount++;
-			if (FirstPlayTime <= 0)
-			{
-				FirstPlayTime = Time.time;
-			}
-			MaxPlayAtSameTime = Mathf.Max(MaxPlayAtSameTime, Effects.FindAll(ef => ef.EffectPlayer.IsPlaying).Count);
+				PlayCount++;
+				if (FirstPlayTime <= 0)
+				{
+					FirstPlayTime = Time.time;
+				}
+				MaxPlayAtSameTime = Mathf.Max(MaxPlayAtSameTime, Effects.FindAll(ef => ef.EffectPlayer.IsPlaying).Count);
 #endif
 			}
 
 #if COLLECT_STATS_MODE
-		public StringBuilder GetPrintCollectedStats(StringBuilder sb)
-		{
-			sb.Append(EffectsProperties.EffectName).
-				Append(" (").Append(EffectsProperties.EffectPath).Append(")\t").
-				Append("PlayCount=\t").Append(PlayCount).Append("\t").
-				Append("FirstPlayTime=\t").Append(FirstPlayTime).Append("\t").
-				Append("MaxPlayAtSameTime=\t").Append(MaxPlayAtSameTime);
-			return sb;
-		}
+			public StringBuilder GetPrintCollectedStats(StringBuilder sb)
+			{
+				sb.Append(EffectsProperties.EffectName).
+					Append(" (").Append(EffectsProperties.EffectPath).Append(")\t").
+					Append("PlayCount=\t").Append(PlayCount).Append("\t").
+					Append("FirstPlayTime=\t").Append(FirstPlayTime).Append("\t").
+					Append("MaxPlayAtSameTime=\t").Append(MaxPlayAtSameTime);
+				return sb;
+			}
 
-		private int PlayCount { get; set; }
-		private float FirstPlayTime { get; set; }
-		private int MaxPlayAtSameTime { get; set; }
+			private int PlayCount { get; set; }
+			private float FirstPlayTime { get; set; }
+			private int MaxPlayAtSameTime { get; set; }
 #endif
 
 			public List<EffectInfo> Effects { get; private set; }
@@ -214,6 +380,12 @@ namespace Effects
 			private EffectProperty EffectsProperties { get; set; }
 
 			private EffectManager m_effectManager = null;
+
+			private readonly List<EffectPlayer> m_activeEffects = new List<EffectPlayer>();
+			private int m_lastUsedEffectIndex = -1;
+#if DETECT_REMOVED_EFFECTS_NAMES
+			private readonly List<string> m_activeEffectNames = new List<string>();
+#endif
 		}
 
 		protected override void Init()
@@ -238,32 +410,31 @@ namespace Effects
 			base.DeInit();
 		}
 
+		private void OnApplicationQuit() { UnloadEffects(); }
+
 		private void UnloadEffects()
 		{
-			for (int i = 0; i < m_activeEffects.Count; i++)
-			{
-				var mActiveEffect = m_activeEffects[i];
-#if UNITY_EDITOR
-				Assert.IsNotNull(mActiveEffect, m_activeEffectNames[i]);
-#endif
-				mActiveEffect.Stop();
-			}
 #if COLLECT_STATS_MODE
 		StringBuilder sb = new StringBuilder();
-		foreach (var effectGroup in m_effectGroups)
-		{
-			foreach (var effectsGroup in effectGroup.Value)
+#endif
+			foreach (var effectGroupsValue in m_effectGroups.Values)
 			{
-				effectsGroup.Value.GetPrintCollectedStats(sb);
+				foreach (var effectsGroup in effectGroupsValue.Values)
+				{
+#if COLLECT_STATS_MODE
+				effectsGroup.GetPrintCollectedStats(sb);
 				sb.AppendLine();
+#endif
+					effectsGroup.UnloadEffects();
+				}
 			}
+#if COLLECT_STATS_MODE
+		if (sb.Length > 0)
+		{
+			Debug.Log(sb.ToString());
 		}
-		Debug.Log(sb.ToString());
 #endif
-			m_activeEffects.Clear();
-#if UNITY_EDITOR
-			m_activeEffectNames.Clear();
-#endif
+
 			// TODO: unload effects resources
 		}
 
@@ -275,61 +446,20 @@ namespace Effects
 				Profiler.EndSample();
 				return;
 			}
-
-			for (int i = 0; i < m_activeEffects.Count; ++i)
+			for (int i = 0; i < m_effectGroupsOnly.Count; ++i)
 			{
-				var activeEffectPlayer = m_activeEffects[i];
-#if UNITY_EDITOR
-				Assert.IsNotNull(activeEffectPlayer, m_activeEffectNames[i]);
-#endif
-				Profiler.BeginSample("ActiveEffect.IsPlaying", activeEffectPlayer);
-				if (activeEffectPlayer.IsPlaying)
-				{
-					Profiler.EndSample();
-					continue;
-				}
-
-				Profiler.EndSample();
-				Profiler.BeginSample("ActiveEffect.Stop/Remove", activeEffectPlayer);
-				activeEffectPlayer.Stop();
-				Assert.IsFalse(activeEffectPlayer.DontChangeTransform, "DontChangeTransform seted on " + activeEffectPlayer);
-				m_activeEffects.Remove(activeEffectPlayer);
-#if UNITY_EDITOR
-				m_activeEffectNames.RemoveAt(i);
-#endif
-				--i;
-				Profiler.EndSample();
+				var effectGroup = m_effectGroupsOnly[i];
+				effectGroup.Tick();
 			}
-
 			Profiler.EndSample();
 		}
 
 		public void CollectAllChildActiveEffects()
 		{
-			List<EffectPlayer> notDisabledEffects = new List<EffectPlayer>();
-			for (int i = 0; i < m_activeEffects.Count; i++)
+			foreach (var effectsGroup in m_effectGroupsOnly)
 			{
-				var e = m_activeEffects[i];
-#if UNITY_EDITOR
-				Assert.IsNotNull(e, m_activeEffectNames[i]);
-#endif
-				if (m_activeEffects[i].transform.parent == null)
-				{
-					notDisabledEffects.Add(m_activeEffects[i]);
-					continue;
-				}
-
-				e.Stop();
-				e.transform.SetParent(transform, false);
+				effectsGroup.CollectAllChildActiveEffects();
 			}
-
-			m_activeEffects.Clear();
-			m_activeEffects.AddRange(notDisabledEffects);
-
-#if UNITY_EDITOR
-			m_activeEffectNames.Clear();
-			m_activeEffectNames.AddRange(m_activeEffects.Select(e => e.name));
-#endif
 		}
 
 		/// <summary>
@@ -339,12 +469,10 @@ namespace Effects
 		/// <param name="gamePlace"></param>
 		/// <param name="parent"></param>
 		/// <returns>Created effectPlayer or null if can`t play</returns>
-		public EffectPlayer PlayEffect(
-			string name, GamePlace gamePlace = GamePlace.Game, Transform parent = null, int priority = 0)
+		public EffectPlayer PlayEffect(string name, GamePlace gamePlace = GamePlace.Game, Transform parent = null, int priority = 0)
 		{
 			return PlayEffect(name, gamePlace, parent, Vector3.zero, Quaternion.identity, priority);
 		}
-
 		/// <summary>
 		/// Create effect and start playing in parent and local pos of it
 		/// </summary>
@@ -355,8 +483,7 @@ namespace Effects
 		/// <param name="rot"></param>
 		/// <param name="priority"></param>
 		/// <returns></returns>
-		public EffectPlayer PlayEffect(
-			string name, GamePlace gamePlace, Transform parent, Vector3 pos, Quaternion rot, int priority)
+		public EffectPlayer PlayEffect(string name, GamePlace gamePlace, Transform parent, Vector3 pos, Quaternion rot, int priority)
 		{
 			Profiler.BeginSample("EffectManager.PlayEffect()", gameObject);
 			var group = GetEffectsGroup(name, gamePlace);
@@ -367,33 +494,8 @@ namespace Effects
 				return null;
 			}
 
-			EffectInfo effectInfo = group.GetEffectInfoForPlay(priority, m_activeEffects);
-			if (effectInfo == null)
-			{
-				Profiler.EndSample();
-				return null;
-			}
-
-			foreach (var curEffectState in m_curEffectStates)
-			{
-				effectInfo.EffectPlayer.SetState(curEffectState.Key, curEffectState.Value);
-			}
-
 			EffectPlayer player = null;
-			bool isTerminated = group.Play(effectInfo, parent, pos, rot, out player);
-			if (isTerminated)
-			{
-#if UNITY_EDITOR
-				int index = m_activeEffects.IndexOf(player);
-				m_activeEffectNames.RemoveAt(index);
-#endif
-				m_activeEffects.Remove(player);
-			}
-
-			m_activeEffects.Add(player);
-#if UNITY_EDITOR
-			m_activeEffectNames.Add(player.name);
-#endif
+			player = group.TryPlayEffect(priority, parent, pos, rot, m_curEffectStates);
 			Profiler.EndSample();
 			return player;
 		}
@@ -404,16 +506,15 @@ namespace Effects
 			{
 				return null;
 			}
-
 			var group = m_effectGroups[gamePlace];
 			if (!group.ContainsKey(effectName))
 			{
 				var effectProp = GetEffectProp(effectName, gamePlace);
 				var newGroup = new EffectsGroup(this, effectProp);
 				group.Add(effectName, newGroup);
+				m_effectGroupsOnly.Add(newGroup);
 				return newGroup;
 			}
-
 			return group[effectName];
 		}
 
@@ -427,7 +528,6 @@ namespace Effects
 			{
 				effectProp = new EffectProperty(effectName, effectName, gamePlace);
 			}
-
 			return effectProp;
 		}
 
@@ -457,27 +557,9 @@ namespace Effects
 			var minigameGroup = m_effectGroups[GamePlace.SubGame];
 			foreach (var effectsGroup in minigameGroup)
 			{
-				var info = effectsGroup.Value;
-				Profiler.BeginSample("UnloadMinigame.FindActive");
-				var curActive = m_activeEffects.FindAll(ae => info.Effects.Find(j => j.EffectPlayer == ae) != null);
-#if UNITY_EDITOR
-				foreach (var effectPlayer in curActive)
-				{
-					int index = m_activeEffects.IndexOf(effectPlayer);
-					m_activeEffectNames.RemoveAt(index);
-				}
-#endif
-				m_activeEffects.RemoveAll(ae => curActive.Contains(ae));
-				Profiler.EndSample();
-				for (int j = 0; j < curActive.Count; j++)
-				{
-					var effectPlayer = curActive[j];
-					effectPlayer.Stop();
-				}
-
 				effectsGroup.Value.Unload();
+				m_effectGroupsOnly.Remove(effectsGroup.Value);
 			}
-
 			minigameGroup.Clear();
 			Resources.UnloadAsset(CurrentEffectsProperties);
 			CurrentEffectsProperties = null;
@@ -494,7 +576,7 @@ namespace Effects
 					// For case if disabled effect
 					if (group != null)
 					{
-						group.CreateMaxEffects();
+						group.CreateStaticEffects();
 					}
 				}
 			}
@@ -524,26 +606,31 @@ namespace Effects
 
 		public List<EffectPlayer> StopActiveEffectsByTag(Transform configParent)
 		{
-			var res = GetActiveEffectsByTag(configParent);
-			foreach (var effectPlayer in res)
+			List<EffectPlayer> res = new List<EffectPlayer>();
+			foreach (var effectGroupsValue in m_effectGroups.Values)
 			{
-				effectPlayer.Stop();
+				foreach (var effectsGroup in effectGroupsValue.Values)
+				{
+					var subRes = effectsGroup.StopActiveEffectsByTag(configParent);
+					res.AddRange(subRes);
+				}
 			}
-
-			m_activeEffects.RemoveAll(ae => res.Contains(ae));
-#if UNITY_EDITOR
-			foreach (var effectPlayer in res)
-			{
-				int index = m_activeEffects.IndexOf(effectPlayer);
-				m_activeEffectNames.RemoveAt(index);
-			}
-#endif
 			return res;
 		}
 
 		private List<EffectPlayer> GetActiveEffectsByTag(Transform configParent)
 		{
-			return m_activeEffects.FindAll(ae => ae.transform.parent == configParent);
+			List<EffectPlayer> res = new List<EffectPlayer>();
+			foreach (var effectGroupsValue in m_effectGroups.Values)
+			{
+				foreach (var effectsGroup in effectGroupsValue.Values)
+				{
+					var subRes = effectsGroup.GetActiveEffectsByTag(configParent);
+					res.AddRange(subRes);
+				}
+			}
+
+			return res;
 		}
 
 		// HACK for Unity 5.5.0
@@ -568,17 +655,11 @@ namespace Effects
 
 		private readonly Dictionary<GamePlace, Dictionary<string, EffectsGroup>> m_effectGroups =
 			new Dictionary<GamePlace, Dictionary<string, EffectsGroup>>();
-
-		private readonly List<EffectPlayer> m_activeEffects = new List<EffectPlayer>();
-
+		private List<EffectsGroup> m_effectGroupsOnly = new List<EffectsGroup>();
 		private Dictionary<EffectType, bool> m_curEffectStates = new Dictionary<EffectType, bool>();
 
 		// HACK for Unity 5.5.0
 		private bool m_isApplicationPaused = false;
 		// End HACK
-
-#if UNITY_EDITOR
-		private readonly List<string> m_activeEffectNames = new List<string>();
-#endif
 	}
 }

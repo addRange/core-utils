@@ -1,0 +1,8 @@
+{
+    "name": "Effects",
+    "references": [
+        "Core.Utils"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

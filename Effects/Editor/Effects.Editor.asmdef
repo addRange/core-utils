@@ -1,0 +1,12 @@
+{
+    "name": "Effects.Editor",
+    "references": [
+        "Effects",
+        "Core.Utils",
+        "CoreUtils.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

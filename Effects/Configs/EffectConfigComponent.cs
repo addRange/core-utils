@@ -15,6 +15,8 @@ namespace Effects.Configs
 
 		public void PlayInPos() { m_effect.PlayEffectInPos(); }
 
+		public void FadeEffect() { m_effect.FadeEffect(); }
+
 		[SerializeField]
 		private EffectConfig m_effect = new EffectConfig();
 	}
