@@ -3,7 +3,9 @@
 //----------------------------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 public static class Build
@@ -26,7 +28,7 @@ public static class Build
 			if (commandLineArg.StartsWith("-switchBuildTarget"))
 			{
 				string platformName = commandLineArg.Split('=')[1];
-				targetBuildPlatform = (BuildTarget) Enum.Parse(typeof(BuildTarget), platformName);
+				targetBuildPlatform = (BuildTarget)Enum.Parse(typeof(BuildTarget), platformName);
 			}
 			//Debug.Log(i + ") " + commandLineArg);
 		}
@@ -40,14 +42,16 @@ public static class Build
 		}
 		System.IO.Directory.CreateDirectory(BuildPath);
 		targetBuildPreset.Apply();
-		string result = BuildPipeline.BuildPlayer(targetBuildPreset.GetBuildPlayerOptions(BuildPath, targetBuildPlatform));
-		if (string.IsNullOrEmpty(result))
+		var result = BuildPipeline.BuildPlayer(targetBuildPreset.GetBuildPlayerOptions(BuildPath, targetBuildPlatform));
+		switch (result.summary.result)
 		{
-			Debug.Log("Build Success!");
-		}
-		else
-		{
-			throw new Exception(result);
+			case BuildResult.Failed:
+				Debug.LogWarning("Build Failed!");
+				break;
+			case BuildResult.Succeeded:
+			default:
+				Debug.Log("Build Success!");
+				break;
 		}
 	}
 }

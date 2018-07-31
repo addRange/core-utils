@@ -108,7 +108,7 @@ public static class AnimationUtils
 				keyframe.time = selectedAnim.length - keyframe.time;
 				keyframe.inTangent = keyframe.outTangent;
 				keyframe.outTangent = keyframe.inTangent;
-				keyframe.tangentMode = keyframe.tangentMode;
+				//keyframe.tangentMode = keyframe.tan;
 				keys[j] = keyframe;
 			}
 

@@ -20,14 +20,14 @@ class UsedTexturesCollector : EditorWindow
 	{
 		m_allSprites.Clear();
 		m_needAddCollected = true;
-		EditorApplication.hierarchyWindowChanged += OnHierarchyWindowChanged;
+		EditorApplication.hierarchyChanged += OnHierarchyWindowChanged;
 		EditorApplication.update += OnUpdate;
 	}
 
 	private void OnDisable()
 	{
 		EditorApplication.update -= OnUpdate;
-		EditorApplication.hierarchyWindowChanged -= OnHierarchyWindowChanged;
+		EditorApplication.hierarchyChanged -= OnHierarchyWindowChanged;
 	}
 
 	private void OnHierarchyWindowChanged()

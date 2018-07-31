@@ -18,12 +18,12 @@ class TextureOptimizer : EditorWindow
 	private void OnEnable()
 	{
 		UpdateObjectsForOptimize();
-		EditorApplication.projectWindowChanged += OnProjectWindowChanged;
+		EditorApplication.hierarchyChanged += OnProjectWindowChanged;
 	}
 
 	private void OnDisable()
 	{
-		EditorApplication.projectWindowChanged -= OnProjectWindowChanged;
+		EditorApplication.hierarchyChanged -= OnProjectWindowChanged;
 	}
 
 	private void OnProjectWindowChanged()

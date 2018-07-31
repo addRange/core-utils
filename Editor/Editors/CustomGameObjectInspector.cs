@@ -215,7 +215,7 @@ public class CustomGameObjectInspector : Editor
 				var prefabsForApply = new Dictionary<GameObject, KeyValuePair<Object, Object>>();
 				foreach (var targObj in targets)
 				{
-					UnityEngine.Object prefabParent = PrefabUtility.GetPrefabParent(targObj);
+					UnityEngine.Object prefabParent = PrefabUtility.GetCorrespondingObjectFromSource(targObj);
 					if (prefabParent == null)
 					{
 						Debug.Log("prefabParent null. Skip " + targObj, targObj);

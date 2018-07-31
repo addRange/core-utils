@@ -2,27 +2,19 @@
 // Created by Leonid [Zanleo] Voitko (2017.08.10)
 //----------------------------------------------------------------------------------------------
 
-#if UNITY_5_6_OR_NEWER
+#if UNITY_2018_1_OR_NEWER
 using System;
 using UnityEngine;
-using UnityEditor;
 using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 
-public class BuildInformer : IPreprocessBuild, IPostprocessBuild
+public class BuildInformer : IPostprocessBuildWithReport
 {
 	int IOrderedCallback.callbackOrder { get { return int.MaxValue; } }
 
-	public void OnPreprocessBuild(BuildTarget target, string path)
+	public void OnPostprocessBuild(BuildReport report)
 	{
-		//Debug.Log("MyCustomBuildProcessor.OnPreprocessBuild for target " + target + " at path " + path);
-		m_startBuildTime = DateTime.Now;
+		Debug.Log("BuildTime = " + new DateTime(report.summary.totalTime.Ticks));
 	}
-	public void OnPostprocessBuild(BuildTarget target, string path)
-	{
-		//Debug.Log("MyCustomBuildProcessor.OnPostprocessBuild for target " + target + " at path " + path);
-		Debug.Log("BuildTime = " + (DateTime.Now - m_startBuildTime));
-	}
-
-	private static DateTime m_startBuildTime = DateTime.Now;
 }
 #endif

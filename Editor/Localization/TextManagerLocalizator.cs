@@ -12,19 +12,20 @@ using UnityEditor.Build;
 using UnityEngine;
 
 using ChillyRoom.UnityEditor.iOS.Xcode;
+using UnityEditor.Build.Reporting;
 
 namespace Localization
 {
-	public class TextManagerLocalizator : IPreprocessBuild, IPostprocessBuild
+	public class TextManagerLocalizator : IPreprocessBuildWithReport, IPostprocessBuildWithReport
 	{
 		public int callbackOrder
 		{
 			get { return 0; }
 		}
-
-		public void OnPreprocessBuild(BuildTarget buildTarget, string path)
+		public void OnPreprocessBuild(BuildReport report)
 		{
-			if (buildTarget != BuildTarget.Android)
+			var buildTarget = report.summary.platformGroup;
+			if (buildTarget != BuildTargetGroup.Android)
 			{
 				return;
 			}
@@ -137,10 +138,13 @@ namespace Localization
 			sb.AppendLine();
 			return false;
 		}
+		
 
-		public void OnPostprocessBuild(BuildTarget buildTarget, string path)
+		public void OnPostprocessBuild(BuildReport report)
 		{
-			if (buildTarget != BuildTarget.iOS)
+			var path = report.summary.outputPath;
+			var buildTarget = report.summary.platformGroup;
+			if (buildTarget != BuildTargetGroup.iOS)
 			{
 				return;
 			}

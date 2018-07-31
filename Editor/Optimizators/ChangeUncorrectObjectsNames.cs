@@ -323,7 +323,7 @@ public class ChangeUncorrectObjectsName : EditorWindow
 			return;
 		}
 
-		var prefabParent = PrefabUtility.GetPrefabParent(prefabRoot);
+		var prefabParent = PrefabUtility.GetCorrespondingObjectFromSource(prefabRoot);
 		if (prefabParent == null)
 		{
 			return;

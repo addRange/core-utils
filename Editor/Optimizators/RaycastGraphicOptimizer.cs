@@ -40,12 +40,12 @@ class RaycastGraphicOptimizer : EditorWindow
 	private void OnEnable()
 	{
 		UpdateObjectsForOptimize();
-		EditorApplication.hierarchyWindowChanged += OnHierarchyWindowChanged;
+		EditorApplication.hierarchyChanged += OnHierarchyWindowChanged;
 	}
 
 	private void OnDisable()
 	{
-		EditorApplication.hierarchyWindowChanged -= OnHierarchyWindowChanged;
+		EditorApplication.hierarchyChanged -= OnHierarchyWindowChanged;
 	}
 
 	private void OnHierarchyWindowChanged()
@@ -190,7 +190,7 @@ class RaycastGraphicOptimizer : EditorWindow
 			return;
 		}
 
-		var prefabParent = PrefabUtility.GetPrefabParent(prefabRoot);
+		var prefabParent = PrefabUtility.GetCorrespondingObjectFromSource(prefabRoot);
 		if (prefabParent == null)
 		{
 			return;
