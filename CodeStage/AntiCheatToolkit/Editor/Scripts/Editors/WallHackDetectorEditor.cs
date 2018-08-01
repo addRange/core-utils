@@ -79,7 +79,8 @@ namespace CodeStage.AntiCheat.EditorCode.Editors
 					ActSettings.ShowWindow();
 				}
 			}
-
+			
+#if ENABLE_PHYSICS_PHYSX3
 			if (checkRaycast.boolValue || checkController.boolValue || checkRigidbody.boolValue)
 			{
 				int layerId = LayerMask.NameToLayer("Ignore Raycast");
@@ -92,6 +93,7 @@ namespace CodeStage.AntiCheat.EditorCode.Editors
                     }
 				}
 			}
+#endif
 		}
 
 		private static bool PropertyFieldChanged(SerializedProperty property, GUIContent content, params GUILayoutOption[] options)

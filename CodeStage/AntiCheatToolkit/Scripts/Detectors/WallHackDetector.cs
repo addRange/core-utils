@@ -62,8 +62,10 @@ namespace CodeStage.AntiCheat.Detectors
 		private const string WIREFRAME_SHADER_NAME = "Hidden/ACTk/WallHackTexture";
 		private const int SHADER_TEXTURE_SIZE = 4;
 		private const int RENDER_TEXTURE_SIZE = 4;
-
+		
+#if ENABLE_PHYSICS_PHYSX3
 		private readonly Vector3 rigidPlayerVelocity = new Vector3(0, 0, 1f);
+#endif
 
 		private static int instancesInScene;
 
@@ -245,8 +247,10 @@ namespace CodeStage.AntiCheat.Detectors
 		private int whLayer = -1;
 		private int raycastMask = -1;
 
+		#if ENABLE_PHYSICS_PHYSX3
 		private Rigidbody rigidPlayer;
 		private CharacterController charControllerPlayer;
+		#endif
 		private float charControllerVelocity;
 
 		private byte rigidbodyDetections;
@@ -436,7 +440,8 @@ namespace CodeStage.AntiCheat.Detectors
 			Gizmos.DrawWireCube(spawnPosition, new Vector3(3, 3, 3));
 		}
 #endif
-
+		
+#if ENABLE_PHYSICS_PHYSX3
 		private void FixedUpdate()
 		{
 			if (!isRunning || !checkRigidbody || rigidPlayer == null)
@@ -473,6 +478,7 @@ namespace CodeStage.AntiCheat.Detectors
 				}
 			}
 		}
+	#endif
 
 #if WALLHACK_DEBUG
 		private void OnGUI()
@@ -527,7 +533,7 @@ namespace CodeStage.AntiCheat.Detectors
 				return;
 			}
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR && ENABLE_PHYSICS_PHYSX3
 			if (checkRaycast || checkController || checkRigidbody)
 			{
 				int layerId = LayerMask.NameToLayer("Ignore Raycast");
@@ -641,7 +647,9 @@ namespace CodeStage.AntiCheat.Detectors
 					solidWall.name = "SolidWall";
 #else
 					solidWall = new GameObject("SolidWall");
+					#if ENABLE_PHYSICS_PHYSX3
 					solidWall.AddComponent<BoxCollider>();
+					#endif
 #endif
 					solidWall.layer = whLayer;
 					solidWall.transform.parent = serviceContainer.transform;
@@ -734,7 +742,9 @@ namespace CodeStage.AntiCheat.Detectors
 							if (foregroundRenderer == null)
 							{
 								GameObject foregroundObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+								#if ENABLE_PHYSICS_PHYSX3
 								Destroy(foregroundObject.GetComponent<BoxCollider>());
+								#endif
 								foregroundObject.name = "WireframeFore";
 								foregroundObject.layer = whLayer;
 								foregroundObject.transform.parent = serviceContainer.transform;
@@ -754,7 +764,9 @@ namespace CodeStage.AntiCheat.Detectors
 							if (backgroundRenderer == null)
 							{
 								GameObject backgroundObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+								#if ENABLE_PHYSICS_PHYSX3
 								Destroy(backgroundObject.GetComponent<MeshCollider>());
+								#endif
 								backgroundObject.name = "WireframeBack";
 								backgroundObject.layer = whLayer;
 								backgroundObject.transform.parent = serviceContainer.transform;
@@ -870,6 +882,7 @@ namespace CodeStage.AntiCheat.Detectors
 #endif
 		private void StartRigidModule()
 		{
+#if ENABLE_PHYSICS_PHYSX3
 			if (!checkRigidbody)
 			{
 				StopRigidModule();
@@ -877,7 +890,7 @@ namespace CodeStage.AntiCheat.Detectors
 				UpdateServiceContainer();
 				return;
 			}
-
+			
 			if (!rigidPlayer) InitRigidModule();
 			if (rigidPlayer.transform.localPosition.z <= 1f && rigidbodyDetections > 0)
 			{
@@ -892,6 +905,7 @@ namespace CodeStage.AntiCheat.Detectors
 			rigidPlayer.transform.localPosition = new Vector3(0.75f, 0, -1f);
 			rigidPlayer.velocity = rigidPlayerVelocity;
 			Invoke("StartRigidModule", 4);
+			#endif
 		}
 
 #if ACTK_EXCLUDE_OBFUSCATION
@@ -899,6 +913,7 @@ namespace CodeStage.AntiCheat.Detectors
 #endif
 		private void StartControllerModule()
 		{
+			#if ENABLE_PHYSICS_PHYSX3
 			if (!checkController)
 			{
 				StopControllerModule();
@@ -906,7 +921,7 @@ namespace CodeStage.AntiCheat.Detectors
 				UpdateServiceContainer();
 				return;
 			}
-
+			
 			if (!charControllerPlayer) InitControllerModule();
 			if (charControllerPlayer.transform.localPosition.z <= 1f && controllerDetections > 0)
 			{
@@ -919,6 +934,7 @@ namespace CodeStage.AntiCheat.Detectors
 			charControllerPlayer.transform.localPosition = new Vector3(-0.75f, 0, -1f);
 			charControllerVelocity = 0.01f;
 			Invoke("StartControllerModule", 4);
+			#endif
 		}
 
 #if ACTK_EXCLUDE_OBFUSCATION
@@ -1053,6 +1069,7 @@ namespace CodeStage.AntiCheat.Detectors
 #endif
 		private void ShootRaycastModule()
 		{
+#if ENABLE_PHYSICS_PHYSX3
 			if (Physics.Raycast(serviceContainer.transform.position, serviceContainer.transform.TransformDirection(Vector3.forward), 1.5f, raycastMask))
 			{
 				if (raycastDetections > 0)
@@ -1070,18 +1087,23 @@ namespace CodeStage.AntiCheat.Detectors
 			}
 
 			Invoke("ShootRaycastModule", raycastDelay);
+#endif
 		}
 
 		private void StopRigidModule()
 		{
+#if ENABLE_PHYSICS_PHYSX3
 			if (rigidPlayer) rigidPlayer.velocity = Vector3.zero;
 			CancelInvoke("StartRigidModule");
+#endif
 		}
 
 		private void StopControllerModule()
 		{
+#if ENABLE_PHYSICS_PHYSX3
 			if (charControllerPlayer) charControllerVelocity = 0;
 			CancelInvoke("StartControllerModule");
+#endif
 		}
 
 		private void StopWireframeModule()
@@ -1093,7 +1115,7 @@ namespace CodeStage.AntiCheat.Detectors
 		{
 			CancelInvoke("ShootRaycastModule");
 		}
-
+#if ENABLE_PHYSICS_PHYSX3
 		private void InitRigidModule()
 		{
 #if WALLHACK_DEBUG
@@ -1142,6 +1164,7 @@ namespace CodeStage.AntiCheat.Detectors
 			Destroy(charControllerPlayer.gameObject);
 			charControllerPlayer = null;
 		}
+#endif
 
 		private bool Detect()
 		{
