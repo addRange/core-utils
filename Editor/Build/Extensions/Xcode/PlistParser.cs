@@ -157,7 +157,7 @@ namespace ChillyRoom.UnityEditor.iOS.Xcode
         internal static XDocument ParseXmlNoDtd(string text)
         {
             XmlReaderSettings settings = new XmlReaderSettings();
-            settings.ProhibitDtd = false;
+            settings.DtdProcessing = DtdProcessing.Ignore;
             settings.XmlResolver = null; // prevent DTD download
 
             XmlReader xmlReader = XmlReader.Create(new StringReader(text), settings);
