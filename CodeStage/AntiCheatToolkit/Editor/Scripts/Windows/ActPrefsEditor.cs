@@ -1,4 +1,8 @@
-﻿#if UNITY_EDITOR
+﻿#if UNITY_2018_3_0
+#undef UNITY_EDITOR_WIN
+#endif
+
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -618,10 +622,11 @@ namespace CodeStage.AntiCheat.EditorCode.Windows
 		private string[] ReadKeysWin()
 		{
 #if UNITY_5_5_OR_NEWER
-			RegistryKey registryLocation = Registry.CurrentUser.CreateSubKey("Software\\Unity\\UnityEditor\\" + PlayerSettings.companyName + "\\" + PlayerSettings.productName);
+			//RegistryKey registryLocation = Registry.CurrentUser.CreateSubKey("Software\\Unity\\UnityEditor\\" + PlayerSettings.companyName + "\\" + PlayerSettings.productName);
 #else
-			RegistryKey registryLocation = Registry.CurrentUser.CreateSubKey("Software\\" + PlayerSettings.companyName + "\\" + PlayerSettings.productName);
+			//RegistryKey registryLocation = Registry.CurrentUser.CreateSubKey("Software\\" + PlayerSettings.companyName + "\\" + PlayerSettings.productName);
 #endif
+			var ver = "Software\\Unity\\UnityEditor\\" + PlayerSettings.companyName + "\\" + PlayerSettings.productName;
 			if (registryLocation == null)
 			{
 				return new string[0];
@@ -767,6 +772,12 @@ namespace CodeStage.AntiCheat.EditorCode.Windows
 
 			[SerializeField]
 			private float floatValue;
+			
+			[SerializeField]
+			private bool m_selected;
+			
+			[SerializeField]
+			private bool m_obscured;
 
 			internal float FloatValue
 			{
@@ -838,11 +849,17 @@ namespace CodeStage.AntiCheat.EditorCode.Windows
 				return result;
 			}
 
-			[SerializeField]
-			internal bool Selected { get; set; }
+			internal bool Selected
+			{
+				get => m_selected;
+				set => m_selected = value;
+			}
 
-			[SerializeField]
-			internal bool Obscured { get; set; }
+			internal bool Obscured
+			{
+				get => m_obscured;
+				set => m_obscured = value;
+			}
 
 			internal PrefsRecord(string newKey, string value, bool encrypted)
 			{

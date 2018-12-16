@@ -86,7 +86,11 @@ public static class SingletonGameobjectUtility
 			go.AddComponent(type);
 			string fullPath = "Assets/Resources/" + pathToPrefab + ".prefab";
 			ScriptableObjectUtility.CreateFolderIfNotExit(fullPath);
+			#if UNITY_2018_3_OR_NEWER
+			var prefab = PrefabUtility.SaveAsPrefabAsset(go, fullPath);
+			#else
 			var prefab = PrefabUtility.CreatePrefab(fullPath, go);
+			#endif
 			Object.DestroyImmediate(go);
 			Debug.Log("Created: " + pathToPrefab, prefab);
 		}
