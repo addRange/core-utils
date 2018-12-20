@@ -622,11 +622,10 @@ namespace CodeStage.AntiCheat.EditorCode.Windows
 		private string[] ReadKeysWin()
 		{
 #if UNITY_5_5_OR_NEWER
-			//RegistryKey registryLocation = Registry.CurrentUser.CreateSubKey("Software\\Unity\\UnityEditor\\" + PlayerSettings.companyName + "\\" + PlayerSettings.productName);
+			RegistryKey registryLocation = Registry.CurrentUser.CreateSubKey("Software\\Unity\\UnityEditor\\" + PlayerSettings.companyName + "\\" + PlayerSettings.productName);
 #else
-			//RegistryKey registryLocation = Registry.CurrentUser.CreateSubKey("Software\\" + PlayerSettings.companyName + "\\" + PlayerSettings.productName);
+			RegistryKey registryLocation = Registry.CurrentUser.CreateSubKey("Software\\" + PlayerSettings.companyName + "\\" + PlayerSettings.productName);
 #endif
-			var ver = "Software\\Unity\\UnityEditor\\" + PlayerSettings.companyName + "\\" + PlayerSettings.productName;
 			if (registryLocation == null)
 			{
 				return new string[0];
