@@ -15,7 +15,7 @@ public class DictionaryPool<ObjKey, ObjType> where ObjType : class
 		Pools = new Dictionary<ObjKey, Pool<ObjType>>(comparer);
 	}
 
-	public ObjType GetFromPool(ObjKey key, Func<ObjKey, ObjType> instantiateObjectFunc = null)
+	public virtual ObjType GetFromPool(ObjKey key, Func<ObjKey, ObjType> instantiateObjectFunc = null)
 	{
 		Pool<ObjType> pool;
 		if (!Pools.TryGetValue(key, out pool))
