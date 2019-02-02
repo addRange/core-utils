@@ -1,4 +1,4 @@
-﻿#if UNITY_2018_3_0
+﻿#if UNITY_2018_3
 #undef UNITY_EDITOR_WIN
 #endif
 
