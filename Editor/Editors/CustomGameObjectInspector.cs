@@ -12,7 +12,9 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
+#if !UNITY_2018_3_OR_NEWER
 [CanEditMultipleObjects, CustomEditor(typeof(GameObject))]
+#endif
 public class CustomGameObjectInspector : Editor
 {
 	private static Action EventExitGUI = null;
@@ -175,8 +177,11 @@ public class CustomGameObjectInspector : Editor
 	private void DestroyEditor()
 	{
 		//Debug.Log("DestroyEditor " + GetInfo());
-		DestroyImmediate(m_unityEditor);
-		m_unityEditor = null;
+		if (m_unityEditor != null)
+		{
+			DestroyImmediate(m_unityEditor);
+			m_unityEditor = null;
+		}
 	}
 
 	private object GetInfo()
