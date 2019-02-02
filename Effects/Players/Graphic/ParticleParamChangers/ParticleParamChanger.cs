@@ -23,7 +23,7 @@ namespace Effects.Particle.ParamChangers
 		public ParticleSystem ParticleSystem { get { return m_particleSystem; } }
 
 		[SerializeField]
-		private ParticleSystem m_particleSystem;
+		private ParticleSystem m_particleSystem = null;
 		[SerializeField]
 		private AnimationCurve m_curve = new AnimationCurve();
 

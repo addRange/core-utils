@@ -2,6 +2,7 @@
 // Created by Tanya Gaiduk (2017.03.23)
 //-----------------------------------------------------------------------------------------
 
+#pragma warning disable 0618
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
@@ -448,3 +449,4 @@ public class ChangeUncorrectObjectsName : EditorWindow
 	private bool m_applyToPrefab = true;
 	private Mode m_mode = Mode.OnScene;
 }
+#pragma warning disable 0618

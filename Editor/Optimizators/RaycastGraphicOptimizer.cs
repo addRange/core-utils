@@ -3,6 +3,7 @@
 //		and Leonid [Zanleo] Voitko
 //-----------------------------------------------------------------------------------------
 
+#pragma warning disable 0618
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
@@ -232,3 +233,4 @@ class RaycastGraphicOptimizer : EditorWindow
 
 	private bool m_askPrefabChanges = true;
 }
+#pragma warning disable 0618

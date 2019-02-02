@@ -2,6 +2,8 @@
 // Created by Leonid [Zanleo] Voitko (2017.01.27)
 //----------------------------------------------------------------------------------------------
 
+#pragma warning disable 0618
+
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -295,3 +297,5 @@ public class CustomGameObjectInspector : Editor
 	private Editor m_unityEditor = null;
 	private MethodInfo m_unityEditorOnHeaderGUI = null;
 }
+
+#pragma warning restore 0618
