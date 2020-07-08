@@ -5,6 +5,8 @@
 // Ons ome unity version - not work, so, simple replace in cur file UNITY_ASSERTIONS string to some else)
 //#undef UNITY_ASSERTIONS
 
+using System;
+
 namespace Core.Utils
 {
 	using System.Collections.Generic;
@@ -28,17 +30,24 @@ namespace Core.Utils
 		/// <summary>
 		///   <para>Should an exception be thrown on a failure.</para>
 		/// </summary>
+#if UNITY_2019_2_OR_NEWER
+		[Obsolete("Obsolete in Unity 2019.2 or newer", true)]
+#endif
 		public static bool raiseExceptions
 		{
+#if UNITY_2019_2_OR_NEWER
+			get;
+			set;
+#else
 			get { return UAssert.raiseExceptions; }
 			set { UAssert.raiseExceptions = value; }
+#endif
 		}
 
 		/// <summary>
 		///   <para>Asserts that the condition is true.</para>
 		/// </summary>
 		/// <param name="condition"></param>
-		/// <param name="message"></param>
 		[Conditional(ConditionDefine)]
 		public static void IsTrue(bool condition)
 		{
@@ -60,7 +69,6 @@ namespace Core.Utils
 		///   <para>Asserts that the condition is false.</para>
 		/// </summary>
 		/// <param name="condition"></param>
-		/// <param name="message"></param>
 		[Conditional(ConditionDefine)]
 		public static void IsFalse(bool condition)
 		{
@@ -83,10 +91,8 @@ namespace Core.Utils
 		/// 
 		/// Note: Every time you call the method with tolerance specified, a new instance of Assertions.Comparers.FloatComparer is created. For performance reasons you might want to instance your own comparer and pass it to the AreEqual method. If the tolerance is not specifies, a default comparer is used and the issue does not occur.</para>
 		///       </summary>
-		/// <param name="tolerance">Tolerance of approximation.</param>
 		/// <param name="expected"></param>
 		/// <param name="actual"></param>
-		/// <param name="message"></param>
 		[Conditional(ConditionDefine)]
 		public static void AreApproximatelyEqual(float expected, float actual)
 		{
@@ -98,7 +104,6 @@ namespace Core.Utils
 		/// 
 		/// Note: Every time you call the method with tolerance specified, a new instance of Assertions.Comparers.FloatComparer is created. For performance reasons you might want to instance your own comparer and pass it to the AreEqual method. If the tolerance is not specifies, a default comparer is used and the issue does not occur.</para>
 		///       </summary>
-		/// <param name="tolerance">Tolerance of approximation.</param>
 		/// <param name="expected"></param>
 		/// <param name="actual"></param>
 		/// <param name="message"></param>
@@ -116,7 +121,6 @@ namespace Core.Utils
 		/// <param name="tolerance">Tolerance of approximation.</param>
 		/// <param name="expected"></param>
 		/// <param name="actual"></param>
-		/// <param name="message"></param>
 		[Conditional(ConditionDefine)]
 		public static void AreApproximatelyEqual(float expected, float actual, float tolerance)
 		{
@@ -141,10 +145,8 @@ namespace Core.Utils
 		/// <summary>
 		///   <para>Asserts that the values are approximately not equal. An absolute error check is used for approximate equality check (|a-b| &lt; tolerance). Default tolerance is 0.00001f.</para>
 		/// </summary>
-		/// <param name="tolerance">Tolerance of approximation.</param>
 		/// <param name="expected"></param>
 		/// <param name="actual"></param>
-		/// <param name="message"></param>
 		[Conditional(ConditionDefine)]
 		public static void AreNotApproximatelyEqual(float expected, float actual)
 		{
@@ -154,7 +156,6 @@ namespace Core.Utils
 		/// <summary>
 		///   <para>Asserts that the values are approximately not equal. An absolute error check is used for approximate equality check (|a-b| &lt; tolerance). Default tolerance is 0.00001f.</para>
 		/// </summary>
-		/// <param name="tolerance">Tolerance of approximation.</param>
 		/// <param name="expected"></param>
 		/// <param name="actual"></param>
 		/// <param name="message"></param>
@@ -170,7 +171,6 @@ namespace Core.Utils
 		/// <param name="tolerance">Tolerance of approximation.</param>
 		/// <param name="expected"></param>
 		/// <param name="actual"></param>
-		/// <param name="message"></param>
 		[Conditional(ConditionDefine)]
 		public static void AreNotApproximatelyEqual(float expected, float actual, float tolerance)
 		{
