@@ -3,22 +3,16 @@
 //----------------------------------------------------------------------------------------------
 
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 
+[ExecuteInEditMode]c
 [RequireComponent(typeof(RectTransform))]
 public class SafeAreaApplier : MonoBehaviour
 {
 #if UNITY_2017_3_OR_NEWER
 	private void OnEnable()
 	{
-		var sa = Screen.safeArea;
-		// DEBUG in editor with fake safeArea
-		//const float multiplier = 0.1f;
-		//float deltaY = ScreenHeight * multiplier;
-		//sa.height -= 2 * deltaY;
-		//sa.position = new Vector2(sa.position.x, sa.position.y + deltaY);
-		//Debug.Log(sa);
-
-		ApplySafeAreaWithKoefficients(sa);
+		RefreshAre();
 	}
 #else
 	private void OnEnable()
@@ -30,6 +24,26 @@ public class SafeAreaApplier : MonoBehaviour
 		Debug.LogWarning("Not supported by Unity lower than 2017.3");
 	}
 #endif
+
+#if UNITY_EDITOR
+	private void Update()
+	{
+		RefreshAre();
+	}
+#endif
+
+	private void RefreshAre()
+	{
+		var sa = Screen.safeArea;
+		// DEBUG in editor with fake safeArea
+		//const float multiplier = 0.1f;
+		//float deltaY = ScreenHeight * multiplier;
+		//sa.height -= 2 * deltaY;
+		//sa.position = new Vector2(sa.position.x, sa.position.y + deltaY);
+		//Debug.Log(sa);
+
+		ApplySafeAreaWithKoefficients(sa);
+	}
 
 	public void ApplySafeAreaWithKoefficients(Rect safeArea)
 	{
