@@ -5,7 +5,7 @@
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 
-[ExecuteInEditMode]c
+[ExecuteInEditMode]
 [RequireComponent(typeof(RectTransform))]
 public class SafeAreaApplier : MonoBehaviour
 {
