@@ -5,9 +5,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public static class ListExtensions
 {
+	public static string JoinComma<T>(this IList<T> _this)
+	{
+		return String.Join(", ", _this.Select(i => i.ToString()).ToArray());
+	}
+	
 	public static T Random<T>(this IList<T> _this)
 	{
 		return Random(_this, UnityEngine.Random.Range);
